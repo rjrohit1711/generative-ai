@@ -12,7 +12,13 @@ Modular DCGAN implementation to train on custom datasets and generate images.
 - `setup_check.py` – Environment verification script.
 
 ## Usage
-1. Install dependencies: `pip install -r requirements.txt`
-2. Prepare data in a folder.
-3. Train: `python scripts/train.py --data_dir PATH`
-4. Generate: `python scripts/generate.py`
+1. Run `cd  image_generation_ai`
+2. Install dependencies: `pip install -r requirements.txt`
+3. Prepare data in a folder(Labelled data is not a requiremnt as model is trained on unlabelled data).
+4. Train: `python scripts/train.py --data_dir PATH`
+5. Generate: `python scripts/generate.py`
+
+## Output 
+- Model outputs a set of random images which were used in training.
+  
+![image](https://github.com/user-attachments/assets/945cd616-be2b-4a7f-97f9-9af3ff7df148)
