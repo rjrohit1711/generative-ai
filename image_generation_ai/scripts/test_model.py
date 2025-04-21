@@ -4,6 +4,7 @@ import torch.optim as optim
 import torchvision.utils as vutils
 import os
 import sys
+import matplotlib.pyplot as plt
 
 # Hyperparameters
 batch_size = 128
@@ -56,17 +57,31 @@ if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   
     netG = Generator().to(device) 
     if os.path.exists(netG_path):
-        netG.load_state_dict(torch.load(netG_path))
+        # force-load everything onto whichever device you selected (CPU or CUDA)
+        state = torch.load(netG_path, map_location=device)
+        netG.load_state_dict(state)
         print("Loaded saved models.")
     netG.eval()  # Set generator to evaluation mode
     num_images = 64
-    save_path = "generated_images"
-    os.makedirs(save_path, exist_ok=True)
+
 
     with torch.no_grad():
         for i in range(num_images // 64):  # Assuming batch size 64
             noise = torch.randn(64, nz, 1, 1, device=device)
             fake_images = netG(noise).detach().cpu()
-            for j in range(fake_images.size(0)):
-                img = fake_images[j]
-                vutils.save_image(img, os.path.join(save_path, f"image_{i*64+j:05d}.png"), normalize=True)
+
+            # Create a grid from the batch
+            grid = vutils.make_grid(fake_images, nrow=8, normalize=True, scale_each=True)
+
+            # Convert the grid to numpy for plotting
+            npimg = grid.permute(1, 2, 0).cpu().numpy()
+
+            # Show the image grid
+            plt.figure(figsize=(10, 10))
+            plt.imshow(npimg)
+            plt.axis('off')
+            plt.title(f"Generated Batch {i + 1}")
+            plt.show()
+
+            # Optional: break after one batch
+            break
