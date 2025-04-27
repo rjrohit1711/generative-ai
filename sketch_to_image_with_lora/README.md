@@ -5,3 +5,9 @@
 * Modularity & multi-tasking.
 * Storage & Versioning.
 * Preservation of base capabilities.
+
+### Dataset Used
+* [SketchyDatabase](https://github.com/CDOTAD/SketchyDatabase/)
+
+### Working Pipeline
+![alt text](working_pipeline.png)
