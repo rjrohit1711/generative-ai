@@ -24,23 +24,25 @@ class AssetCreatorAgent:
         with open(Constants.GAME_CONFIG, "r", encoding="utf-8") as f:
             config = json.load(f)
 
-        output_dir = "outputs/assets"
-        os.makedirs(output_dir, exist_ok=True)
-
         # Track filename-safe prompt labels
         tasks = []
 
         # 3. Assets
         for asset_type, asset_list in config.get("assets_required", {}).items():
             for asset in asset_list:
-                prompt = f"Give image that I can use in game development for assert type: {asset_type} asset: {asset}"
-                filename = f"{asset_type.lower()}_{asset.replace(' ', '_').lower()}.png"
-                tasks.append((prompt, filename))
+                prompt = (
+                    f"Ultra-detailed, high-resolution concept art for a 2d mobile Game {asset_type}: {asset}. "
+                    "4K, sharp focus, 2D painting style, "
+                )
+                filename = f"{asset.replace(' ', '_').lower()}.png"
+                tasks.append((prompt, filename, asset_type))
 
         # Generate and save each image
-        for prompt, filename in tasks:
+        for prompt, filename, asset_type in tasks:
             print(f"🖼️  Generating: {prompt}")
-            image = self.pipe(prompt).images[0]
+            image = self.pipe(prompt,  num_inference_steps=150, guidance_scale=8.5).images[0]
+            output_dir = f"assets/{asset_type}/"
+            os.makedirs(output_dir, exist_ok=True)
             image_path = os.path.join(output_dir, filename)
             image.save(image_path)
 
