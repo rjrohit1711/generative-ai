@@ -18,7 +18,7 @@ class Orchestrator:
         print("🎮 Orchestration started!")
 
         # 1. Config generation
-        self.designer.generate_game_config(prompt)
+        # self.designer.generate_game_config(prompt)
 
         # 2. Asset generation
         self.assets.generate_assets()
@@ -27,7 +27,7 @@ class Orchestrator:
         self.sounds.generate_sounds()
 
         # 4. Build integration
-        # build_dir = self.dev.integrate_assets(game_desc, assets, sounds)
+        build_dir = self.dev.write_all()
 
         # 5. Automated testing
         # report = self.tester.test_game(build_dir)

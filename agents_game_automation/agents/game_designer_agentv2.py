@@ -6,12 +6,12 @@ from dotenv import load_dotenv
 class GameDesignerAgent:
     def __init__(
         self,
-        base_model: str = "google/gemma-3-1b-it"
+        base_model: str = "meta/llama-4-maverick-17b-128e-instruct"
     ):
         load_dotenv()
-        api_key = os.getenv("GEMMA3B_API_KEY")
+        api_key = os.getenv("META_LLAMA4")
         if not api_key:
-            raise ValueError("GEMMA3B_API_KEY environment variable is not set.")
+            raise ValueError("META_LLAMA4 environment variable is not set.")
 
         self.client = OpenAI(
             base_url="https://integrate.api.nvidia.com/v1",
@@ -46,6 +46,8 @@ class GameDesignerAgent:
         "sounds_required": {{"<sound_type>": ["<sound1>", "<sound2>"]}}
         }}
 
+        Keep the overall game setting very simple.
+        
         Use this as reference : {json.dumps(json_content)}
         """
 
