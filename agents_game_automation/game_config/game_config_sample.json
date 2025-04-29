@@ -1,0 +1,29 @@
+{
+  "game_name": "Panda Racing Adventure",
+  "art_style": "Cute 2D cartoon",
+  "setting": "Colorful bamboo forests",
+
+  "characters": ["Panda", "Rival animal", "Power-up mascot"],
+
+  "mechanics": ["Swipe to steer", "Use speed boosts", "Avoid obstacles"],
+
+  "controls": {
+    "jump": "Space",
+    "steer_left": "Left Arrow",
+    "steer_right": "Right Arrow",
+    "boost": "Shift"
+  },
+
+  "objectives": ["Win races", "Collect bamboo coins"],
+
+  "assets_required": {
+    "backgrounds": ["bamboo_forest", "race_track"],
+    "characters": ["panda", "rival", "power_up"],
+    "ui_elements": ["start_button", "pause_menu", "score_display"]
+  },
+
+  "sounds_required": {
+    "background_music": ["race_theme", "win_theme"],
+    "sound_effects": ["jump", "boost", "collision"]
+  }
+}
