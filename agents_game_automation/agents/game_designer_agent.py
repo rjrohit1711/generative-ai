@@ -81,6 +81,7 @@ class GameDesignerAgent:
             )
 
         raw = self.tokenizer.decode(output_ids[0], skip_special_tokens=True)
+        
         # Strip everything before the first '{'
         json_part = raw[raw.find("{"):]
 

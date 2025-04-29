@@ -18,7 +18,6 @@
 
   "assets_required": {
     "backgrounds": ["bamboo_forest", "race_track"],
-    "characters": ["panda", "rival", "power_up"],
     "ui_elements": ["start_button", "pause_menu", "score_display"]
   },
 

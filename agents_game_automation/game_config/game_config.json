@@ -1,0 +1,29 @@
+{
+  "game_name": "Echo Bloom",
+  "art_style": "Stylized, vibrant watercolor with a slightly retro feel",
+  "setting": "A vibrant, overgrown, and slightly surreal forest filled with glowing flora and ancient ruins.",
+  "characters": ["The Echo Weaver", "Lost Spirits", "Guardian Sprites"],
+  "mechanics": [
+    "Echo Mapping: Manipulate sound waves to reveal hidden paths and trigger events.",
+    "Bloom Manipulation: Carefully guide and control bioluminescent plants to create pathways and defensive barriers.",
+    "Spirit Communication: Interact with lost spirits to gather clues and activate ancient mechanisms."
+  ],
+  "controls": {
+    "Echo Mapping": "W",
+    "Bloom Manipulation": "A",
+    "Spirit Communication": "Space"
+  },
+  "objectives": [
+    "Uncover the history of the forest and the Echo Weaver's disappearance.",
+    "Restore balance to the ecosystem by harmonizing the forest's energies."
+  ],
+  "assets_required": {
+    "backgrounds": ["Overgrown forest", "Ancient ruins"],
+    "characters": ["Echo Weaver", "Lost Spirits", "Guardian Sprites"],
+    "ui_elements": ["map_display", "energy_icons", "spirit_icons"]
+  },
+  "sounds_required": {
+    "background_music": ["dreamy_forest_theme"],
+    "sound_effects": ["gentle_wind", "flowing_water", "birdsong"]
+  }
+}

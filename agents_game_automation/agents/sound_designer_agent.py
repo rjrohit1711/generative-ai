@@ -4,6 +4,11 @@ from audiocraft.models import MusicGen
 from audiocraft.data.audio import audio_write
 import torch
 import os
+import json
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import utils.constants as Constants
 
 class SoundDesignerAgent:
     def __init__(self):
@@ -13,16 +18,32 @@ class SoundDesignerAgent:
         self.model = MusicGen.get_pretrained('melody')
         print("[LOG] Model loaded successfully!")
 
-    def generate_sounds(self, game_description: str):
-        print(f"🎵 Generating sound assets for: '{game_description}'")
+    def generate_sounds(self):
+        print(f"🎵 Generating sound assets from game config")
         output_dir = "outputs/sounds"
         os.makedirs(output_dir, exist_ok=True)
 
-        descriptions = [f"Background music for a game: {game_description}"]
-        wavs = self.model.generate(descriptions)
+        # Load config
+        with open(Constants.GAME_CONFIG, "r", encoding="utf-8") as f:
+            config = json.load(f)
 
-        sound_path = os.path.join(output_dir, "generated_music.wav")
-        print(f"[LOG] Saving sound to: {sound_path}")
-        audio_write(sound_path, wavs[0].cpu(), sample_rate=32000)
+        # Generate prompts from sounds_required
+        tasks = []
+        for sound_type, sound_list in config.get("sounds_required", {}).items():
+            for sound in sound_list:
+                description = f"{sound_type} sound for game: {sound}"
+                filename = f"{sound_type.lower()}_{sound.replace(' ', '_').lower()}.wav"
+                tasks.append((description, filename))
 
-        return [sound_path]
+        for desc, filename in tasks:
+            print(f"🎧 Generating: {desc}")
+            wavs = self.model.generate([desc])
+            sound_path = os.path.join(output_dir, filename)
+            audio_write(sound_path, wavs[0].cpu(), sample_rate=32000)
+            print(f"[SAVED] {sound_path}")
+
+        print(f"✅ {len(tasks)} sound assets saved to {output_dir}")
+
+if __name__ == "__main__":
+    agent = SoundDesignerAgent()
+    agent.generate_sounds()

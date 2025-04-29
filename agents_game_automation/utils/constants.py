@@ -1,0 +1,1 @@
+GAME_CONFIG="game_config/game_config.json"
