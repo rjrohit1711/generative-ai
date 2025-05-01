@@ -5,6 +5,7 @@ import json
 from typing import Dict, List, Tuple
 from openai import OpenAI
 from dotenv import load_dotenv
+from tester_agent import TesterAgent
 
 class DeveloperAgent:
     """
@@ -16,8 +17,8 @@ class DeveloperAgent:
     def __init__(
         self,
         model: str = "meta/llama-4-maverick-17b-128e-instruct",
-        config_path: str = "game_config/game_config.json",
-        output_dir: str = "generated_game"
+        config_path: str = "bin/source/game/game_config.json",
+        output_dir: str = "bin/source/game"
     ):
         load_dotenv()
         api_key = os.getenv("META_LLAMA4")
@@ -44,20 +45,25 @@ class DeveloperAgent:
                 {"role": "system", "content": "You are an expert Python/Pygame game developer."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.9,
+            temperature=0.8,
             max_tokens=1024
         )
         return response.choices[0].message.content.strip()
 
     def _strip_fences(self, code: str) -> str:
-        # Remove markdown ``` fences if present
-        if code.startswith("```"):
-            parts = code.split("```")
-            # If language is specified, skip first part
-            if len(parts) >= 3:
-                return parts[1].split("\n", 1)[1]
-            return parts[1]
-        return code
+    # Detect triple backtick fenced code block and extract inner content
+        if "```" in code:
+            lines = code.splitlines()
+            inside_block = False
+            code_lines = []
+            for line in lines:
+                if line.strip().startswith("```"):
+                    inside_block = not inside_block
+                    continue
+                if inside_block:
+                    code_lines.append(line)
+            return "\n".join(code_lines).strip()
+        return code.strip()
 
     def _write_file(self, filename: str, code: str):
         path = os.path.join(self.output_dir, filename)
@@ -69,6 +75,8 @@ class DeveloperAgent:
         """
         Generate all game modules in sequence, each focused on a
         specific config slice, updating summary to keep consistency.
+        Make sure to write full code don't assume code will be there.
+        Make sure each class has very minimal dependency to other classes if it need any config data it should have one.
         """
         with open(self.config_path, "r", encoding="utf-8") as f:
             self.config: Dict = json.load(f)
@@ -76,68 +84,132 @@ class DeveloperAgent:
         # Define tasks: (filename, high-level instruction, needed config keys)
         tasks: List[Tuple[str, str, List[str]]] = [
             (
-                "main.py",
-                "Initialize pygame, set window title to game_name, size 800x600, and create main loop.",
-                ["game_name", "setting", "controls"]
-            ),
-            (
-                "characters.py",
-                "Define Character base class and concrete classes for each character in config.",
-                ["characters"]
-            ),
-            (
-                "controls.py",
-                "Map key inputs to character movement based on controls mapping.",
-                ["controls"]
-            ),
-            (
-                "mechanics.py",
-                "Implement game mechanics and objectives such as scoring, collisions, and win conditions.",
-                ["mechanics", "objectives"]
-            ),
-            (
                 "assets_loader.py",
-                "Load and provide access to images listed in assets_required.",
+                "Load and provide access to images listed in assets_required.\n"
+                "We should be able to access assert by passing assert name.\n"
+                "If code need to access config data read it from `game_config.json` present in same directory.\n",
                 ["assets_required"]
             ),
             (
                 "sounds.py",
-                "Load and manage sounds from sounds_required, providing play_sound function.",
+                "Load and manage sounds from sounds_required, providing play_sound function."
+                "We should be able to access assert by passing assert name.\n"
+                "If code need to access config data read it from `game_config.json` present in same directory.\n",
                 ["sounds_required"]
             ),
             (
+                "characters.py",
+                "Define Character base class and concrete classes for each character in config.\n"
+                "Make sure they can methods to fetch all character details and have list of character present.\n"
+                "This should also load assert for that character like image."
+                "If code need to access config data read it from `game_config.json` present in same directory.\n",
+                ["characters"]
+            ),
+            (
+                "controls.py",
+                "Map key inputs to character movement based on controls mapping.\n"
+                "It should move the main character according to controls sepcified."
+                "If code need to access config data read it from `game_config.json` present in same directory.\n",
+                ["controls"]
+            ),
+            (
+                "mechanics.py",
+                "Implement game mechanics and objectives such as scoring, collisions, and win conditions."
+                "If code need to access config data read it from `game_config.json` present in same directory.\n",
+                ["mechanics", "objectives"]
+            ),
+            (
                 "play.py",
-                "This file will have function to play game and update score.",
+                "This file will have function to play game and update score.\n"
+                "This will use the previously written helper classes and combine them to write a working game.\n"
+                "Once user click start game this class will load character data, backgorund and able to move character."
+                "If code need to access config data read it from `game_config.json` present in same directory.\n",
                 []
             ),
             (
                 "main.py",
-                "Update main.py to interact with all generated files and load the game.",
-                []
-            ),
+                "This should load the game.\n"
+                "This should have a start game button which once pressed calls play.py to start the game"
+                "If code need to access config data read it from `game_config.json` present in same directory.\n",
+                ["game_name", "art_style", "setting"]
+            )
         ]
 
         for filename, instruction, keys in tasks:
             # Build minimal subconfig for this module
             subconfig = {k: self.config.get(k) for k in keys}
+            summary_str = '\n'.join(self.summary) if self.summary else '- none'
+            # Promt llm to generate class signature for given instruction and subconfig and capture results.
+            stub_prompt = f"""
+            # SUMMARY SO FAR:
+            { summary_str }
 
-            # Build prompt with summary and subconfig
-            prompt = (
-                "# Previously generated modules summary:\n" +
-                ("\n".join(self.summary) if self.summary else "- none") +
-                "\n\n" +
-                f"Generate `{filename}`\nInstruction: {instruction}" +
-                f"\nUse only this part of the config: {json.dumps(subconfig)}"
-                "\nOutput only valid Python code."
-            )
+            TASK     : Create the STUB for `{filename}`
+            INSTRUCTION: {instruction}
+            CONFIG   : {json.dumps(subconfig, indent=2)}
 
-            # Call LLM and clean code
-            raw_code = self._llm(prompt)
-            code = self._strip_fences(raw_code)
+            OUTPUT ONLY:
+            - necessary imports
+            - class or function signatures
+            - docstrings
+            - `pass` in method bodies
+            """
+            stub_code = self._llm(stub_prompt)
+            self.summary.append(stub_code)
+            print(f"STUB Code generated. {stub_code}")
 
-            # Save file and update summary
-            self._write_file(filename, code)
-            self.summary.append(f"- {filename}: {instruction}")
+            # Prompt llm to write implementation.
+            impl_prompt = f"""
+            You have this stub in `{filename}`:
+            ```python
+            {stub_code}
+            CONFIG : {json.dumps(subconfig, indent=2)} INSTRUCTION: "{instruction}"
+            Please replace every pass with working implementation.
+            Return the full, updated Python file only. 
+            """
+            impl_code = self._llm(impl_prompt)
+            print(f"IMPL Code generated. {impl_code}")
+
+            # Prompt llm to refine/check for errors.
+            lint_prompt = f"""
+            Your implementation of `{filename}` may have lint or syntax issues.  
+            Run `flake8` and fix ANY errors.
+
+            Here is the current code:
+            ```python
+            {impl_code}
+            Return the complete corrected file—do not alter logic, only style/syntax. """
+            impl_code = self._llm(lint_prompt)
+            print(f"LINT Code generated. {impl_code}")
+
+            # Prompt tester agent to write a test class and test it.
+            # test_results = TesterAgent().test_code(filename, impl_code)
+            test_results = None
+
+            # Provide feedback if encounter any errors to llm.
+            if(test_results is not None):
+                refine_prompt =  f"""
+                Your tests for `{filename}` failed with this output:
+                {test_results}
+
+                Please correct only the parts of `{filename}` that cause these failures.  
+                Return the full, fixed Python file.
+                """
+                impl_code = self._llm(refine_prompt)
+                
+            # Final iteration and save as done below 
+            final_prompt = f"""
+                All tests now pass for `{filename}`.  
+                As a last step, please add a brief module‐level docstring at the top 
+                summarizing its responsibility, then return the final file.
+                {impl_code}
+                """
+            
+            raw_code = self._llm(final_prompt)
+            final_code = self._strip_fences(raw_code)
+
+            # Save file
+            self._write_file(filename, final_code)
 
 # Runner
 if __name__ == "__main__":

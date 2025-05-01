@@ -83,12 +83,12 @@ class GameDesignerAgent:
             if depth == 0:
                 final_json = json_part[: idx + 1]
                 # Save to file
-                with open("game_config/game_config.json", "w", encoding="utf-8") as f:
+                with open("bin/source/game_config.json", "w", encoding="utf-8") as f:
                     f.write(final_json)
                 return final_json
 
         # If brace balancing fails, still save whatever we have
-        with open("game_config/game_config.json", "w", encoding="utf-8") as f:
+        with open("bin/source/game_config.json", "w", encoding="utf-8") as f:
             f.write(json_part)
         return json_part
 

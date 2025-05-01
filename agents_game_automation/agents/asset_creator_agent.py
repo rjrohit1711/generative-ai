@@ -41,7 +41,7 @@ class AssetCreatorAgent:
         for prompt, filename, asset_type in tasks:
             print(f"🖼️  Generating: {prompt}")
             image = self.pipe(prompt,  num_inference_steps=150, guidance_scale=8.5).images[0]
-            output_dir = f"assets/{asset_type}/"
+            output_dir = f"bin/source/assets/{asset_type}/"
             os.makedirs(output_dir, exist_ok=True)
             image_path = os.path.join(output_dir, filename)
             image.save(image_path)

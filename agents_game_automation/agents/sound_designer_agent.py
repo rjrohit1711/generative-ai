@@ -20,7 +20,7 @@ class SoundDesignerAgent:
 
     def generate_sounds(self):
         print(f"🎵 Generating sound assets from game config")
-        output_dir = "assets/sounds"
+        output_dir = "bin/source/assets/sounds"
         os.makedirs(output_dir, exist_ok=True)
 
         # Load config

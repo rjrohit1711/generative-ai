@@ -1,1 +1,3 @@
 agents_game_automation/.env
+**/bin/
+**/__pycache__/
