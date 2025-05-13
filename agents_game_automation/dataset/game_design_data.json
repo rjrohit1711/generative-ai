@@ -1,732 +1,296 @@
 [
-    {
-      "game_name": "Panda Racing Adventure",
-      "art_style": "Cute 2D cartoon",
-      "setting": "Colorful bamboo forests",
-  
-      "characters": ["Panda", "Rival animal", "Power-up mascot"],
-  
-      "mechanics": ["Swipe to steer", "Use speed boosts", "Avoid obstacles"],
-  
-      "controls": {
-        "jump": "Space",
-        "steer_left": "Left Arrow",
-        "steer_right": "Right Arrow",
-        "boost": "Shift"
-      },
-  
-      "objectives": ["Win races", "Collect bamboo coins"],
-  
-      "assets_required": {
-        "backgrounds": ["bamboo_forest", "race_track"],
-        "characters": ["panda", "rival", "power_up"],
-        "ui_elements": ["start_button", "pause_menu", "score_display"]
-      },
-  
-      "sounds_required": {
-        "background_music": ["race_theme", "win_theme"],
-        "sound_effects": ["jump", "boost", "collision"]
-      }
+  {
+    "game_info": {
+      "name": "Apple Hop",
+      "version": "1.0.0",
+      "description": "Bouncey moves left and right to catch falling apples while avoiding stones!"
     },
-    {
-      "game_name": "Neon Ninja Dash",
-      "art_style": "Neon-lit futuristic style",
-      "setting": "Cyberpunk city streets",
-  
-      "characters": ["Ninja", "Rival samurai", "Drone boss"],
-  
-      "mechanics": ["Wall-run", "Attack enemies", "Use speed boost"],
-  
-      "controls": {
-        "run": "W",
-        "attack": "Left Mouse",
-        "boost": "Shift",
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow"
-      },
-  
-      "objectives": ["Defeat bosses", "Survive the longest"],
-  
-      "assets_required": {
-        "backgrounds": ["neon_city", "rooftop"],
-        "characters": ["ninja", "samurai", "drone_boss"],
-        "ui_elements": ["score_display", "pause_menu"]
-      },
-  
-      "sounds_required": {
-        "background_music": ["cyberpunk_theme", "boss_battle_theme"],
-        "sound_effects": ["jump", "attack", "laser"]
-      }
+    "screen": {
+      "width": 500,
+      "height": 600,
+      "frame_rate": 60,
+      "scroll_speed": 4
     },
-    {
-      "game_name": "Slime Lab Escape",
-      "art_style": "Cute slime creatures with dark undertones",
-      "setting": "Underground slime labs",
-  
-      "characters": ["Slime", "Mad scientist", "Guard bot"],
-  
-      "mechanics": ["Morph shape", "Stick to walls", "Split body"],
-  
-      "controls": {
-        "morph": "E",
-        "stick": "Space",
-        "split": "Q",
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow"
-      },
-  
-      "objectives": ["Escape lab stages", "Avoid guards"],
-  
-      "assets_required": {
-        "backgrounds": ["lab_room", "control_center"],
-        "characters": ["slime", "scientist", "guard_bot"],
-        "ui_elements": ["health_bar", "pause_button"]
-      },
-  
-      "sounds_required": {
-        "background_music": ["lab_theme", "alert_theme"],
-        "sound_effects": ["morph", "alarm", "footsteps"]
-      }
-    },
-    {
-      "game_name": "Shadow Circus",
-      "art_style": "Dark hand-painted 2D style",
-      "setting": "Abandoned circus at night",
-  
-      "characters": ["Haunted clown", "Puppet ringmaster", "Lost soul"],
-  
-      "mechanics": ["Stealth", "Solve mysteries", "Survive traps"],
-  
-      "controls": {
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "interact": "E",
-        "pause": "Esc"
-      },
-  
-      "objectives": ["Uncover circus secret", "Escape alive"],
-  
-      "assets_required": {
-        "backgrounds": ["big_tent", "clown_room"],
-        "characters": ["clown", "ringmaster", "lost_soul"],
-        "ui_elements": ["inventory", "map"]
-      },
-  
-      "sounds_required": {
-        "background_music": ["creepy_circus_theme", "spooky_theme"],
-        "sound_effects": ["footsteps", "mystery_sound", "trap_trigger"]
-      }
-    },
-    {
-      "game_name": "Robo Ranch Tycoon",
-      "art_style": "Cute sci-fi 2D style",
-      "setting": "Futuristic robot farm",
-  
-      "characters": ["Robot rancher", "Mecha animals", "Farm assistant bot"],
-  
-      "mechanics": ["Breed robots", "Build farm", "Manage resources"],
-  
-      "controls": {
-        "build": "B",
-        "breed": "R",
-        "manage": "M",
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow"
-      },
-  
-      "objectives": ["Build largest robot ranch", "Maximize production"],
-  
-      "assets_required": {
-        "backgrounds": ["robot_farm", "workshop"],
-        "characters": ["robot_rancher", "mecha_cow", "assistant_bot"],
-        "ui_elements": ["build_menu", "inventory"]
-      },
-  
-      "sounds_required": {
-        "background_music": ["farm_theme", "mecha_soundtrack"],
-        "sound_effects": ["robot_breed", "building", "machine_hum"]
-      }
-    },
-    {
-      "game_name": "Space Battle Heroes",
-      "art_style": "Retro pixel art",
-      "setting": "Outer space, asteroid fields",
-  
-      "characters": ["Space pilot", "Alien invaders", "Robot sidekick"],
-  
-      "mechanics": ["Shoot enemies", "Collect power-ups", "Upgrade ship"],
-  
-      "controls": {
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "shoot": "Space",
-        "boost": "Shift"
-      },
-  
-      "objectives": ["Destroy alien mothership", "Survive waves of enemies"],
-  
-      "assets_required": {
-        "backgrounds": ["asteroid_field", "space_station"],
-        "characters": ["space_pilot", "alien", "robot_sidekick"],
-        "ui_elements": ["score_display", "health_bar", "pause_button"]
-      },
-  
-      "sounds_required": {
-        "background_music": ["space_theme", "battle_theme"],
-        "sound_effects": ["laser_fire", "explosion", "shield_activation"]
-      }
-    },
-    {
-      "game_name": "Dungeon Crawl Quest",
-      "art_style": "Dark medieval fantasy",
-      "setting": "Underground dungeons, crypts",
-  
-      "characters": ["Knight", "Wizard", "Dragon"],
-  
-      "mechanics": ["Turn-based combat", "Solve puzzles", "Level up"],
-  
-      "controls": {
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "attack": "Space",
-        "use_item": "I"
-      },
-  
-      "objectives": ["Defeat dungeon bosses", "Find the treasure"],
-  
-      "assets_required": {
-        "backgrounds": ["dungeon_room", "crypt_tomb"],
-        "characters": ["knight", "wizard", "dragon"],
-        "ui_elements": ["inventory", "health_bar"]
-      },
-  
-      "sounds_required": {
-        "background_music": ["dungeon_theme", "battle_theme"],
-        "sound_effects": ["sword_clash", "spell_cast", "monster_roar"]
-      }
-    },
-    {
-      "game_name": "Zombie Survival City",
-      "art_style": "Post-apocalyptic, dark and gritty",
-      "setting": "Abandoned city streets, ruined buildings",
-  
-      "characters": ["Survivor", "Zombie horde", "Gun shopkeeper"],
-  
-      "mechanics": ["Shoot zombies", "Scavenge for supplies", "Craft weapons"],
-  
-      "controls": {
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "shoot": "Space",
-        "reload": "R"
-      },
-  
-      "objectives": ["Survive zombie waves", "Find food and ammo"],
-  
-      "assets_required": {
-        "backgrounds": ["ruined_city", "abandoned_hospital"],
-        "characters": ["survivor", "zombie", "shopkeeper"],
-        "ui_elements": ["inventory", "ammo_count", "health_bar"]
-      },
-  
-      "sounds_required": {
-        "background_music": ["post_apocalyptic_theme", "night_theme"],
-        "sound_effects": ["gunshots", "zombie_growl", "footsteps"]
-      }
-    },
-    {
-      "game_name": "Viking Rage",
-      "art_style": "Viking mythology with gritty textures",
-      "setting": "Norse lands, snowy mountains",
-  
-      "characters": ["Viking warrior", "Giant enemies", "Gods of Asgard"],
-  
-      "mechanics": ["Hack and slash", "Defend the village", "Upgrade weapons"],
-  
-      "controls": {
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "attack": "Space",
-        "defend": "D"
-      },
-  
-      "objectives": ["Defend village", "Hunt mythical beasts"],
-  
-      "assets_required": {
-        "backgrounds": ["snowy_mountains", "village_hall"],
-        "characters": ["viking_warrior", "giant_enemy", "god_of_asgard"],
-        "ui_elements": ["health_bar", "weapon_selector"]
-      },
-  
-      "sounds_required": {
-        "background_music": ["viking_theme", "battle_anthem"],
-        "sound_effects": ["axe_swing", "enemy_shout", "shield_block"]
-      }
-    },
-    {
-      "game_name": "Sky Pirate Adventures",
-      "art_style": "Colorful steampunk style",
-      "setting": "Floating islands, sky ships",
-  
-      "characters": ["Pirate captain", "Sky bandits", "Sky whale"],
-  
-      "mechanics": ["Navigate sky ship", "Battle sky pirates", "Upgrade ship"],
-  
-      "controls": {
-        "steer_left": "Left Arrow",
-        "steer_right": "Right Arrow",
-        "shoot": "Space",
-        "boost": "Shift"
-      },
-  
-      "objectives": ["Defeat sky pirate fleet", "Explore floating islands"],
-  
-      "assets_required": {
-        "backgrounds": ["floating_island", "sky_ship_deck"],
-        "characters": ["pirate_captain", "sky_bandit", "sky_whale"],
-        "ui_elements": ["health_bar", "score_display"]
-      },
-  
-      "sounds_required": {
-        "background_music": ["steampunk_theme", "adventure_theme"],
-        "sound_effects": ["cannon_fire", "engine_hum", "whale_song"]
-      }
-    },
-    {
-      "game_name": "Alien Invasion Escape",
-      "art_style": "Sci-fi with dark tones",
-      "setting": "Abandoned space station, alien-infested planet",
-  
-      "characters": ["Astronaut", "Alien drones", "Mysterious AI"],
-  
-      "mechanics": ["Shoot enemies", "Solve environmental puzzles", "Escape the station"],
-  
-      "controls": {
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "jump": "Space",
-        "shoot": "Left Mouse"
-      },
-  
-      "objectives": ["Escape the space station", "Destroy alien hive"],
-  
-      "assets_required": {
-        "backgrounds": ["space_station_hall", "alien_lair"],
-        "characters": ["astronaut", "alien_drone", "ai_assistant"],
-        "ui_elements": ["health_bar", "objective_list"]
-      },
-  
-      "sounds_required": {
-        "background_music": ["sci_fi_theme", "tension_theme"],
-        "sound_effects": ["laser_shoot", "alien_roar", "computer_alert"]
-      }
-    },
-    {
-      "game_name": "Pirate's Treasure Hunt",
-      "art_style": "Colorful cartoon pirate style",
-      "setting": "Tropical islands, pirate ships",
-  
-      "characters": ["Pirate captain", "Treasure hunters", "Ancient guardians"],
-  
-      "mechanics": ["Treasure hunting", "Ship combat", "Platforming"],
-  
-      "controls": {
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "jump": "Space",
-        "fire_cannon": "Left Mouse"
-      },
-  
-      "objectives": ["Find hidden treasure", "Defeat rival pirates"],
-  
-      "assets_required": {
-        "backgrounds": ["tropical_island", "pirate_ship_deck"],
-        "characters": ["pirate_captain", "rival_pirate", "ancient_guardian"],
-        "ui_elements": ["map", "inventory"]
-      },
-  
-      "sounds_required": {
-        "background_music": ["pirate_theme", "adventure_theme"],
-        "sound_effects": ["cannon_fire", "treasure_chime", "footsteps"]
-      }
-    },
-    {
-      "game_name": "Robo-Builder Tycoon",
-      "art_style": "Modern tech with a hint of retro-futuristic",
-      "setting": "Robot factory, futuristic city",
-  
-      "characters": ["Robot engineer", "AI assistant", "Rival engineers"],
-  
-      "mechanics": ["Build robots", "Upgrade machines", "Manage factory resources"],
-  
-      "controls": {
-        "build_robot": "B",
-        "upgrade": "U",
-        "manage": "M",
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow"
-      },
-  
-      "objectives": ["Build the most advanced robots", "Outsmart rival engineers"],
-  
-      "assets_required": {
-        "backgrounds": ["robot_factory", "tech_hub"],
-        "characters": ["robot_engineer", "ai_assistant", "rival_engineer"],
-        "ui_elements": ["factory_dashboard", "robot_specs"]
-      },
-  
-      "sounds_required": {
-        "background_music": ["factory_theme", "techno_beats"],
-        "sound_effects": ["machine_noise", "robot_build", "button_press"]
-      }
-    },
-    {
-      "game_name": "Ghost Hunter: City Shadows",
-      "art_style": "Gritty, dark shadows with a supernatural theme",
-      "setting": "Haunted city, abandoned buildings",
-  
-      "characters": ["Ghost hunter", "Vengeful spirits", "Mysterious entities"],
-  
-      "mechanics": ["Ghost hunting", "Solve paranormal puzzles", "Use gadgets"],
-  
-      "controls": {
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "use_gadget": "E",
-        "attack": "Space"
-      },
-  
-      "objectives": ["Capture vengeful spirits", "Investigate paranormal activities"],
-  
-      "assets_required": {
-        "backgrounds": ["haunted_city", "abandoned_apartment"],
-        "characters": ["ghost_hunter", "ghost", "mysterious_entity"],
-        "ui_elements": ["gadget_panel", "spirit_meter"]
-      },
-  
-      "sounds_required": {
-        "background_music": ["haunting_theme", "dark_ambient"],
-        "sound_effects": ["ghost_whisper", "gadget_beep", "door_creak"]
-      }
-    },
-    {
-      "game_name": "Extreme Sports League",
-      "art_style": "Stylized 2D with vibrant colors",
-      "setting": "Outdoor arenas, mountain cliffs, city streets",
-  
-      "characters": ["Pro athlete", "Rival athletes", "Sponsor"],
-  
-      "mechanics": ["Compete in extreme sports", "Unlock new skills", "Perform stunts"],
-  
-      "controls": {
-        "jump": "Space",
-        "perform_trick": "Q",
-        "boost": "Shift",
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow"
-      },
-  
-      "objectives": ["Win extreme sports tournaments", "Complete stunts"],
-  
-      "assets_required": {
-        "backgrounds": ["mountain_cliff", "street_race_track"],
-        "characters": ["pro_athlete", "rival_athlete", "sponsor"],
-        "ui_elements": ["score_display", "stunt_meter"]
-      },
-  
-      "sounds_required": {
-        "background_music": ["sports_theme", "hype_theme"],
-        "sound_effects": ["jump", "crowd_cheer", "trick_performed"]
-      }
-    },
-    {
-        "game_name": "Dragon Rider Chronicles",
-        "art_style": "Fantasy, high-detailed textures",
-        "setting": "Fantasy world, mountain caves",
-    
-        "characters": ["Dragon Rider", "Fire-breathing dragons", "Ancient sorcerer"],
-    
-        "mechanics": ["Flight combat", "Dragon training", "Explore caves"],
-    
+    "entities": [
+      {
+        "id": "player",
+        "type": "character",
+        "sprite": "bouncey",
+        "health": 3,
         "controls": {
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "fire_breath": "Space",
-        "boost": "Shift"
-        },
-    
-        "objectives": ["Train dragon", "Defeat ancient sorcerer"],
-    
-        "assets_required": {
-        "backgrounds": ["mountain_cave", "dragon_lair"],
-        "characters": ["dragon_rider", "fire_dragon", "sorcerer"],
-        "ui_elements": ["health_bar", "dragon_mood"]
-        },
-    
-        "sounds_required": {
-        "background_music": ["fantasy_theme", "battle_music"],
-        "sound_effects": ["dragon_roar", "fire_breath", "spell_cast"]
+          "movement": "Can move left and right.",
+          "jump": "no",
+          "fly": "no"
         }
+      },
+      {
+        "id": "apple",
+        "type": "collectible",
+        "sprite": "apple",
+        "score": 1
+      },
+      {
+        "id": "stone",
+        "type": "obstacle",
+        "sprite": "stone",
+        "damage": 1
+      }
+    ],
+    "spawners": [
+      {
+        "id": "apple_spawner",
+        "entity": "apple",
+        "infinite": true,
+        "interval_sec": 1.5,
+        "fall_speed": 2,
+        "max_on_screen": 4
+      },
+      {
+        "id": "stone_spawner",
+        "entity": "stone",
+        "infinite": true,
+        "interval_sec": 1,
+        "fall_speed": 1,
+        "max_on_screen": 4
+      }
+    ],
+    "levels": [
+      {
+        "id": "level_1",
+        "use_spawners": ["apple_spawner", "stone_spawner"]
+      }
+    ],
+    "objective": {
+      "type": "score",
+      "target": 15,
+      "description": "Catch apples to earn points. Avoid stones or lose health.",
+      "steps": [
+        "Watch apples and stones fall from the top.",
+        "Move Bouncey left and right to catch apples.",
+        "If you touch a stone, you lose 1 health point.",
+        "Each caught apple adds 1 to your score.",
+        "Reach 15 points to win the level."
+      ],
+      "win_message": "You collected 15 apples! Level Complete!",
+      "lose_message": "Bouncey ran out of health! Game Over!"
     },
-    {
-        "game_name": "Cyber Escape",
-        "art_style": "Neon lights and cyberpunk aesthetic",
-        "setting": "Futuristic city, cybernetically enhanced buildings",
-    
-        "characters": ["Hacker", "Corporate agents", "AI assistant"],
-    
-        "mechanics": ["Hacking", "Stealth", "Puzzle solving"],
-    
-        "controls": {
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "hack": "E",
-        "hide": "C"
-        },
-    
-        "objectives": ["Escape corporate pursuit", "Hack into mainframe"],
-    
-        "assets_required": {
-        "backgrounds": ["cyber_city", "corporate_building"],
-        "characters": ["hacker", "corporate_agent", "ai_assistant"],
-        "ui_elements": ["hacking_progress", "health_bar"]
-        },
-    
-        "sounds_required": {
-        "background_music": ["cyberpunk_theme", "action_theme"],
-        "sound_effects": ["keyboard_tapping", "alarm", "glass_shatter"]
-        }
+    "mechanics": [
+      "Apples and stones fall down from the top of the screen.",
+      "No more than the specified number of apples or stones can be on screen at once.",
+      "When Bouncey touches an apple, the score goes up by 1 and the apple disappears.",
+      "When Bouncey touches a stone, Bouncey loses 1 health and the stone disappears.",
+      "Bouncey's movement is limited to the screen area only.",
+      "The game ends in victory when score reaches 15, or in defeat when health reaches 0."
+    ],
+    "hud": {
+      "description": "Displays player's score and health visibly on the screen.",
+      "score_display": {
+        "position": { "x": 10, "y": 10 },
+        "font_size": 24,
+        "color": "#FFFFFF",
+        "label": "Score"
+      },
+      "health_display": {
+        "position": { "x": 700, "y": 10 },
+        "font_size": 24,
+        "color": "#FF0000",
+        "label": "Health"
+      }
     },
-    {
-        "game_name": "Ocean Adventure",
-        "art_style": "Cartoonish oceanic colors",
-        "setting": "Underwater, lost shipwrecks",
-    
-        "characters": ["Deep-sea diver", "Whale", "Octopus"],
-    
-        "mechanics": ["Underwater exploration", "Treasure hunting", "Solve puzzles"],
-    
-        "controls": {
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "dive": "Space",
-        "use_item": "E"
-        },
-    
-        "objectives": ["Find sunken treasure", "Explore the deep sea"],
-    
-        "assets_required": {
-        "backgrounds": ["underwater_cave", "shipwreck"],
-        "characters": ["deep_sea_diver", "whale", "octopus"],
-        "ui_elements": ["oxygen_bar", "treasure_inventory"]
-        },
-    
-        "sounds_required": {
-        "background_music": ["underwater_theme", "treasure_theme"],
-        "sound_effects": ["bubbling", "whale_song", "treasure_discovery"]
-        }
+    "assets_required":[
+      {
+        "asset": "scene_background",
+        "description": "Ggame background: panoramic twilight forest clearing under a violet-orange gradient sky.",
+        "path": "assets/sprites/scene_background.png"
+      },
+      {
+        "asset": "bouncey",
+        "description": "Sprite image of the player character Bouncey.",
+        "path": "assets/sprites/bouncey.png"
+      },
+      {
+        "asset": "apple",
+        "description": "Sprite image for the collectible apple.",
+        "path": "assets/sprites/apple.png"
+      },
+      {
+        "asset": "stone",
+        "description": "A black stone, slightly irregular shape with rough edges, side-on view, simple shading to suggest texture.",
+        "path": "assets/sprites/stone.png"
+      }
+    ],
+      "sounds_required": [
+      {
+        "asset": "background_music",
+        "description": "Slow and soft background music for the game.",
+        "path": "assets/sounds/background_music.wav"
+      },
+      {
+        "asset": "apple_catch",
+        "description": "Quick sound effect played when the player successfully catches an apple.",
+        "path": "assets/sounds/apple_catch.wav"
+      },
+      {
+        "asset": "stone_hit",
+        "description": "Quick sound effect when the player hits the wall or boundary.",
+        "path": "assets/sounds/stone_hit.wav"
+      },
+      {
+        "asset": "win",
+        "description": "Victory sound effect played when the player wins the game.",
+        "path": "assets/sounds/win.wav"
+      },
+      {
+        "asset": "lose",
+        "description": "Game over sound played when the player loses all health.",
+        "path": "assets/sounds/lose.wav"
+      }
+    ]
+  },
+  {
+    "game_info": {
+      "name": "Gem Dash",
+      "version": "1.0.0",
+      "description": "Collect glowing gems while dodging falling hammers in an underground cave!"
     },
-    {
-        "game_name": "Space Racer X",
-        "art_style": "Futuristic with sleek spaceship designs",
-        "setting": "Outer space, intergalactic race tracks",
-    
-        "characters": ["Space racer", "Race rivals", "Alien announcer"],
-    
-        "mechanics": ["Speed racing", "Weapon upgrades", "Dodge obstacles"],
-    
-        "controls": {
-        "accelerate": "W",
-        "brake": "S",
-        "boost": "Shift",
-        "fire_weapon": "Space"
-        },
-    
-        "objectives": ["Win races", "Upgrade spaceship"],
-    
-        "assets_required": {
-        "backgrounds": ["space_race_track", "asteroid_belt"],
-        "characters": ["space_racer", "alien_rival", "alien_announcer"],
-        "ui_elements": ["race_timer", "score_display"]
-        },
-    
-        "sounds_required": {
-        "background_music": ["high_speed_theme", "race_music"],
-        "sound_effects": ["engine_rev", "boost_activation", "laser_fire"]
-        }
+    "screen": {
+      "width": 800,
+      "height": 600,
+      "frame_rate": 60,
+      "scroll_speed": 2
     },
-    {
-        "game_name": "Jungle Survival",
-        "art_style": "Realistic jungle with lush vegetation",
-        "setting": "Tropical jungle, dangerous wildlife",
-    
-        "characters": ["Explorer", "Wild animals", "Rescue team"],
-    
-        "mechanics": ["Survival", "Crafting", "Hunt wildlife"],
-    
+    "entities": [
+      {
+        "id": "player",
+        "type": "character",
+        "sprite": "miner",
+        "health": 5,
         "controls": {
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "jump": "Space",
-        "craft_item": "C"
-        },
-    
-        "objectives": ["Survive in the jungle", "Find your way to safety"],
-    
-        "assets_required": {
-        "backgrounds": ["dense_jungle", "waterfall"],
-        "characters": ["explorer", "wild_animal", "rescue_team"],
-        "ui_elements": ["health_bar", "inventory"]
-        },
-    
-        "sounds_required": {
-        "background_music": ["jungle_theme", "tension_theme"],
-        "sound_effects": ["animal_roar", "waterfall_sound", "footsteps"]
+          "movement": "left/right",
+          "jump": "yes",
+          "fly": "no"
         }
+      },
+      {
+        "id": "gem",
+        "type": "collectible",
+        "sprite": "gem",
+        "score": 1
+      },
+      {
+        "id": "hammer",
+        "type": "obstacle",
+        "sprite": "hammer",
+        "damage": 1
+      }
+    ],
+    "spawners": [
+      {
+        "id": "gem_spawner",
+        "entity": "gem",
+        "infinite": true,
+        "interval_sec": 1.8,
+        "fall_speed": 1,
+        "max_on_screen": 3
+      },
+      {
+        "id": "hammer_spawner",
+        "entity": "hammer",
+        "infinite": true,
+        "interval_sec": 2,
+        "fall_speed": 1,
+        "max_on_screen": 2
+      }
+    ],
+    "levels": [
+      {
+        "id": "level_1",
+        "use_spawners": ["gem_spawner", "hammer_spawner"]
+      }
+    ],
+    "objective": {
+      "type": "score",
+      "target": 20,
+      "description": "Collect gems while avoiding hammers.",
+      "steps": [
+        "Gems and hammers fall from above.",
+        "Move left and right to collect gems.",
+        "Avoid hammers to preserve health.",
+        "Reach 20 gems to complete the level."
+      ],
+      "win_message": "You collected all the gems! Victory!",
+      "lose_message": "Too many hits from hammers! Game Over!"
     },
-    {
-        "game_name": "Time Traveler's Dilemma",
-        "art_style": "Sci-fi with time travel aesthetics",
-        "setting": "Various historical timelines, future cities",
-    
-        "characters": ["Time traveler", "Historical figures", "Villains from the future"],
-    
-        "mechanics": ["Time manipulation", "Puzzle-solving", "Combat"],
-    
-        "controls": {
-        "time_travel": "T",
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "attack": "Space"
-        },
-    
-        "objectives": ["Fix the time paradox", "Defeat time villains"],
-    
-        "assets_required": {
-        "backgrounds": ["future_city", "ancient_ruins"],
-        "characters": ["time_traveler", "historical_figure", "time_villain"],
-        "ui_elements": ["time_meter", "quest_log"]
-        },
-    
-        "sounds_required": {
-        "background_music": ["time_travel_theme", "sci-fi_music"],
-        "sound_effects": ["time_jump", "laser_shoot", "ambient_noise"]
-        }
+    "mechanics": [
+      "Falling collectibles and obstacles.",
+      "Limited entities on screen.",
+      "Health and score tracking.",
+      "Victory and defeat conditions."
+    ],
+    "hud": {
+      "description": "Displays player's score and health.",
+      "score_display": {
+        "position": { "x": 10, "y": 10 },
+        "font_size": 24,
+        "color": "#FFFFFF",
+        "label": "Score"
+      },
+      "health_display": {
+        "position": { "x": 700, "y": 10 },
+        "font_size": 24,
+        "color": "#FF0000",
+        "label": "Health"
+      }
     },
-    {
-        "game_name": "Mystic Tower",
-        "art_style": "Fantasy with enchanted landscapes",
-        "setting": "Magical tower, enchanted forests",
+    "assets_required": [
+      {
+        "asset": "scene_background",
+        "description": "Dark underground cave with glowing crystals.",
+        "path": "assets/sprites/scene_background.png"
+      },
+      {
+        "asset": "miner",
+        "description": "Player character wearing a helmet and carrying a lantern.",
+        "path": "assets/sprites/miner.png"
+      },
+      {
+        "asset": "gem",
+        "description": "Bright glowing green gem with sparkle effect.",
+        "path": "assets/sprites/gem.png"
+      },
+      {
+        "asset": "hammer",
+        "description": "Heavy iron hammer falling vertically.",
+        "path": "assets/sprites/hammer.png"
+      }
+    ],
+    "sounds_required": [
+      {
+        "asset": "background_music",
+        "description": "Ambient cave music with soft echoes.",
+        "path": "assets/sounds/background_music.wav"
+      },
+      {
+        "asset": "gem_collect",
+        "description": "Chime sound when collecting a gem.",
+        "path": "assets/sounds/gem_collect.wav"
+      },
+      {
+        "asset": "hammer_hit",
+        "description": "Loud thud when a hammer hits the player.",
+        "path": "assets/sounds/hammer_hit.wav"
+      },
+      {
+        "asset": "win",
+        "description": "Victory fanfare when completing the level.",
+        "path": "assets/sounds/win.wav"
+      },
+      {
+        "asset": "lose",
+        "description": "Low-pitched defeat sound.",
+        "path": "assets/sounds/lose.wav"
+      }
+    ]
+  }
     
-        "characters": ["Wizard", "Tower guardian", "Magical creatures"],
-    
-        "mechanics": ["Magic casting", "Climbing towers", "Battling mystical foes"],
-    
-        "controls": {
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "cast_spell": "Space",
-        "jump": "W"
-        },
-    
-        "objectives": ["Climb the tower", "Defeat the tower guardian"],
-    
-        "assets_required": {
-        "backgrounds": ["magical_tower", "enchanted_forest"],
-        "characters": ["wizard", "tower_guardian", "magical_creature"],
-        "ui_elements": ["spellbook", "mana_bar"]
-        },
-    
-        "sounds_required": {
-        "background_music": ["mystic_theme", "tower_theme"],
-        "sound_effects": ["spell_cast", "magic_impact", "wind_whistle"]
-        }
-    },
-    {
-        "game_name": "Haunted Mansion Escape",
-        "art_style": "Gothic with a dark horror theme",
-        "setting": "Old mansion, haunted hallways",
-    
-        "characters": ["Player", "Ghosts", "Mansion caretaker"],
-    
-        "mechanics": ["Escape puzzles", "Ghost interaction", "Explore mansion"],
-    
-        "controls": {
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "hide": "H",
-        "solve_puzzle": "E"
-        },
-    
-        "objectives": ["Escape the haunted mansion", "Solve the mystery of the ghost"],
-    
-        "assets_required": {
-        "backgrounds": ["haunted_mansion", "creepy_hallway"],
-        "characters": ["player", "ghost", "mansion_caretaker"],
-        "ui_elements": ["puzzle_clue", "health_meter"]
-        },
-    
-        "sounds_required": {
-        "background_music": ["haunting_theme", "spooky_ambience"],
-        "sound_effects": ["ghost_whisper", "door_slam", "creaking_floorboards"]
-        }
-    },
-    {
-        "game_name": "Ninja Shadow Strike",
-        "art_style": "Japanese-inspired, shadowy silhouettes",
-        "setting": "Ancient Japan, moonlit villages",
-    
-        "characters": ["Ninja", "Samurai", "Shogun"],
-    
-        "mechanics": ["Stealth", "Close-combat", "Infiltration"],
-    
-        "controls": {
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "attack": "Space",
-        "stealth_mode": "Shift"
-        },
-    
-        "objectives": ["Defeat the shogun", "Complete infiltration missions"],
-    
-        "assets_required": {
-        "backgrounds": ["moonlit_village", "dojo"],
-        "characters": ["ninja", "samurai", "shogun"],
-        "ui_elements": ["health_bar", "ninja_tools"]
-        },
-    
-        "sounds_required": {
-        "background_music": ["japanese_theme", "stealth_music"],
-        "sound_effects": ["sword_swing", "footsteps", "shuriken_throw"]
-        }
-    },
-    {
-        "game_name": "Castle Siege",
-        "art_style": "Medieval, with large castles and epic landscapes",
-        "setting": "Medieval kingdom, castle battlements",
-    
-        "characters": ["Knight", "King", "Sieging army"],
-    
-        "mechanics": ["Castle defense", "Siege weapons", "Strategic combat"],
-    
-        "controls": {
-        "move_left": "Left Arrow",
-        "move_right": "Right Arrow",
-        "fire_catapult": "Space",
-        "block": "Shift"
-        },
-    
-        "objectives": ["Defend the castle", "Repel the siege"],
-    
-        "assets_required": {
-        "backgrounds": ["castle_battlements", "siege_field"],
-        "characters": ["knight", "king", "sieging_army"],
-        "ui_elements": ["siege_map", "defense_status"]
-        },
-    
-        "sounds_required": {
-        "background_music": ["medieval_theme", "battle_theme"],
-        "sound_effects": ["catapult_fire", "siege_sounds", "sword_clash"]
-        }
-    }
 ]

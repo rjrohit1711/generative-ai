@@ -20,7 +20,8 @@ class TesterAgent:
             api_key=api_key
         )
         self.model = model
-        self.output_dir = "bin/source/game"
+        self.output_dir = "bin/source/game/test"
+        os.makedirs(self.output_dir, exist_ok=True)
 
     def _llm(self, prompt: str) -> str:
 
@@ -41,19 +42,19 @@ class TesterAgent:
         """
         print(f"🧪 Testing {filename}")
         testing_prompt = f"""
-        You are a test-writing assistant. Given the following Python module code, write a `pytest`-based test file.
+        You are a test-writing assistant. Given the following Python code, write a `pytest`-based test file.
 
         Requirements:
-        1. Cover the major functionality of the module.
+        1. Just perform unit testing of the logic which any external import. 
         2. The test must return `0` if all tests pass.
         3. If any test fails, return a list of failed assertions and error messages.
-        4. Only generate valid pyhton code, no need to expta documentation or steps. 
+        4. Generate valid pyhton code. 
         5. Enclose code in between ``` ``` quotes so i can extract it.
-        6. Dont assume anything write full code. 
 
         Module Code:
         ```python
         {code}
+        ```
         """
         testing_code = self._llm(testing_prompt)
         final_code = self._strip_fences(testing_code)
@@ -66,14 +67,19 @@ class TesterAgent:
 
 
     def _strip_fences(self, code: str) -> str:
-        if code.startswith("```"):
-            parts = code.split("```")
-            for part in parts:
-                if part.strip().startswith("python"):
-                    return "\n".join(part.strip().splitlines()[1:])  # skip the ```python line
-                elif part.strip():
-                    return part.strip()
-        return code
+    # Detect triple backtick fenced code block and extract inner content
+        if "```" in code:
+            lines = code.splitlines()
+            inside_block = False
+            code_lines = []
+            for line in lines:
+                if line.strip().startswith("```"):
+                    inside_block = not inside_block
+                    continue
+                if inside_block:
+                    code_lines.append(line)
+            return "\n".join(code_lines).strip()
+        return code.strip()
 
 
     def _write_file(self, filename: str, code: str):
@@ -83,8 +89,8 @@ class TesterAgent:
         print(f"✅ Wrote {filename}")
 
 if __name__ == "__main__":
-    with open("check.py", "r", encoding="utf-8") as f:
+    with open("bin/source/gamev2/play.py", "r", encoding="utf-8") as f:
         code = f.read()
 
-    result = TesterAgent().test_code("check.py", code)
+    result = TesterAgent().test_code("play.py", code)
     print("🧪 Result:\n", result)

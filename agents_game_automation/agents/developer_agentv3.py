@@ -1,6 +1,6 @@
 # agents/developer_agent.py
 
-import os, sys
+import os, sys, ast
 import json
 from typing import Dict, List, Tuple
 from openai import OpenAI
@@ -20,8 +20,8 @@ class DeveloperAgent:
     def __init__(
         self,
         model: str = "qwen/qwen2.5-coder-32b-instruct",
-        config_path: str = Constants.GAME_CONFIG,
-        output_dir: str = "bin/source/game"
+        config_path: str = Constants.GAME_CONFIGV3,
+        output_dir: str = "bin/source/gamev3"
     ):
         load_dotenv()
         api_key = os.getenv("QWEN_API_KEY")
@@ -48,8 +48,8 @@ class DeveloperAgent:
                 {"role": "system", "content": "You are an expert Python/Pygame game developer."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.8,
-            max_tokens=1024
+            temperature=0.1,
+            max_tokens=4096
         )
         return response.choices[0].message.content.strip()
 
@@ -67,6 +67,48 @@ class DeveloperAgent:
                     code_lines.append(line)
             return "\n".join(code_lines).strip()
         return code.strip()
+    
+    def _ask_yes_no(self, prompt: str) -> bool:
+        while True:
+            answer = input(f"{prompt} (y/n): ").strip().lower()
+            if answer in ['y', 'yes']:
+                return True
+            elif answer in ['n', 'no']:
+                return False
+            else:
+                print("Please enter 'y' or 'n'.")
+
+    def parse_tasks(self, text: str) -> List[Tuple[str, str, List[str]]]:
+        """
+        Parse a pipe-separated task breakdown into a List of (name, instruction, keys).
+        """
+        text = self._strip_fences(text)
+        tasks: List[Tuple[str, str, List[str]]] = []
+        
+        for line in text.strip().splitlines():
+            # Skip empty lines
+            if not line.strip():
+                continue
+            
+            # Split by '|' and strip whitespace
+            parts = [part.strip() for part in line.split('|')]
+            if len(parts) != 3:
+                raise ValueError(f"Line does not have exactly 3 parts: {line!r}")
+            
+            name, instruction, keys_str = parts
+            
+            # Safely parse the keys list literal
+            try:
+                keys = ast.literal_eval(keys_str)
+            except Exception as e:
+                raise ValueError(f"Failed to parse keys on line: {line!r}\n  {e}")
+            
+            if not isinstance(keys, list) or not all(isinstance(k, str) for k in keys):
+                raise ValueError(f"Parsed keys is not a list of strings: {keys!r}")
+            
+            tasks.append((name, instruction, keys))
+        
+        return tasks
 
     def _write_file(self, filename: str, code: str):
         os.makedirs(self.output_dir, exist_ok=True)
@@ -77,7 +119,7 @@ class DeveloperAgent:
 
     def write_all(self):
         """
-        Generate all game modules in sequence, each focused on a
+        Generate all game modules IN sequence, each focused on a
         specific config slice, updating summary to keep consistency.
         Make sure to write full code don't assume code will be there.
         Make sure each class has very minimal dependency to other classes if it need any config data it should have one.
@@ -85,60 +127,78 @@ class DeveloperAgent:
         with open(self.config_path, "r", encoding="utf-8") as f:
             self.config: Dict = json.load(f)
 
-        # Define tasks: (filename, high-level instruction, needed config keys)
-        tasks: List[Tuple[str, str, List[str]]] = [
-            (
-                "game_characters.py",
-                "This will be the character user will play with, define classes for each character in `characters`.\n"
-                "I have also provided game mechanics and game onjective to better define this object.",
-                ["characters", "game_mechanics", "objectives"]
-            ),
-             (
-                "game_objects.py",
-                "These are object used in game they can be obstacle or collectiable, define classes for each `objects`.\n"                
-                "I have also provided game mechanics and game onjective to better define this object.",
-                ["objects", "game_mechanics", "objectives"]
-            ),
-            (
-                "game_mechanics.py",
-                "This class will have the logic on how to play game, implement game mechanics and objectives.\n"
-                "This will decide how characters and objects will behave/move on screen.\n"
-                "Make use of previously generated game_characters.py and game_objects.py to get the character and onject data.\n",
-                ["game_mechanics", "objectives", "camera_view"]
-            ),
-            (
-                "play.py",
-                "This initializes UI and load characters and objects on screen, and make use of game mechanics to let user play the game.\n"
-                "Use dummy asserts for now (circles and rectangles or if pygame have default asserts use them) for different objects.\n"
-                "This will display score as well on screen the screen.\n",
-                []
-            ),
-        ]
+        tasks, summary_str = self._get_tasks()
+        if(tasks is None):
+            return
         
-        for i in range(3):
-            self._code( tasks, i)
+        for i in range(1):
+            self._code(summary_str, tasks, i)
+    
+    def _get_tasks(self):
+        task_summary = None
+        # Define tasks: (filename, high-level instruction, needed config keys)
+        for _ in range(2):
+            task_prompt = f"""
 
-    def _code(self, tasks, i):
+                Previous Summary that was rejected by me - {task_summary}
+
+                Here is the config file:
+                game_config.json: {self.config}
+
+                You are a game developer assistant. I will provide you with a game configuration in JSON format. Your task is to design a simple game using Pygame based on the data from this config file.
+
+                `filename.py | A concise summary of that Class | List of related config keys (from the JSON)`
+
+                Use `|` as a separator and use this format and make it enclosed in ```:
+                \n
+                ```
+                str | str | List of [ str ]
+                str | str | List of [ str ]
+                str | str | List of [ str ]
+                str | str | List of [ str ]
+                str | str | List of [ str ]
+                str | str | List of [ str ]
+                ...
+                ```
+                Follow above format strictly to generate data.
+                First define individual components, after that define components which will integrate them to make game.
+                \n
+                Do not generate any actual code yet—just the structured design and class breakdown. Just output the task entires.
+                """
+            
+            task_report = self._llm(task_prompt)
+            print(f"Report: {task_report}")
+            summary_str = task_report
+
+            tasks: List[Tuple[str, str, List[str]]] = self.parse_tasks(task_report)
+
+            print(f"Tasks: {tasks}")
+            task_summary = task_report
+            if self._ask_yes_no("Do you want to continue?"):
+                return tasks, summary_str
+        
+        return None, None
+    
+    def _code(self, summary_str, tasks, i):
         for filename, instruction, keys in tasks:
             # Build minimal subconfig for this module
-            subconfig = {k: self.config.get(k) for k in keys}            
+            subconfig = {k: self.config.get(k) for k in keys}
             summary_str = '\n'.join(self.summary) if self.summary else '- none'
-            self.summary.append(instruction)
-            
             # Promt llm to generate class signature for given instruction and subconfig and capture results.
             stub_prompt = f"""
+
+            Lets start to code.
+
             # SUMMARY SO FAR:
             { summary_str }
 
-            
-            NOTE: If iteration:{i} is not 0, feel free to update class or function signature based on summary provided.
-
             TASK     : Create the STUB for `{filename}`
             INSTRUCTION: {instruction}
-            CONFIG   : {json.dumps(subconfig)}
+            CONFIG   : {json.dumps(subconfig, indent=2)}
 
             OUTPUT ONLY:
             - necessary imports
+            - Docs
             - class or function signatures
             - `todo` in method bodies
             """
@@ -151,7 +211,7 @@ class DeveloperAgent:
             ```python
             {stub_code}
             CONFIG : {json.dumps(subconfig, indent=2)} INSTRUCTION: "{instruction}"
-            Please replace every todo with working implementation.
+            Please replace every `todo` with working implementation.
             Remove doc strings, not required anymore.
             Return the full, updated Python file only. 
             """
@@ -196,10 +256,10 @@ class DeveloperAgent:
             
             raw_code = self._llm(final_prompt)
             final_code = self._strip_fences(raw_code)
-
+            if(i == 0):                
+                self.summary.append(final_code)
             # Save file
             self._write_file(filename, final_code)
-            self._write_file("summary.txt", summary_str)
 
 # Runner
 if __name__ == "__main__":

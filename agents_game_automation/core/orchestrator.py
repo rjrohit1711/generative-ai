@@ -3,15 +3,18 @@
 from agents.game_designer_agentv2 import GameDesignerAgent
 from agents.asset_creator_agent import AssetCreatorAgent
 from agents.sound_designer_agent import SoundDesignerAgent
-from agents.developer_agent import DeveloperAgent
+from agents.developer_agentv2 import DeveloperAgent
 from agents.tester_agent import TesterAgent
+import utils.constants as Constants
+
+game_config = Constants.GAME_CONFIGV2
 
 class Orchestrator:
     def __init__(self):
-        self.designer  = GameDesignerAgent()
-        self.assets    = AssetCreatorAgent()
-        self.sounds    = SoundDesignerAgent()
-        self.dev       = DeveloperAgent()
+        self.designer  = GameDesignerAgent(game_config)
+        self.assets    = AssetCreatorAgent(game_config)
+        self.sounds    = SoundDesignerAgent(game_config)
+        self.dev       = DeveloperAgent(game_config)
         self.tester    = TesterAgent()
 
     def run(self, prompt=None):
@@ -27,10 +30,7 @@ class Orchestrator:
         self.sounds.generate_sounds()
 
         # 4. Build integration
-        build_dir = self.dev.write_all()
-
-        # 5. Automated testing
-        # report = self.tester.test_game(build_dir)
-
+        self.dev.write_all()
+        
         # 6. Summary
         print("\n✅ All done!")

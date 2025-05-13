@@ -1,28 +1,52 @@
 {
-  "game_name": "Panda Racing Adventure",
-  "art_style": "Cute 2D cartoon",
-  "setting": "Colorful bamboo forests",
-
-  "characters": ["Panda", "Rival animal", "Power-up mascot"],
-
-  "mechanics": ["Swipe to steer", "Use speed boosts", "Avoid obstacles"],
-
-  "controls": {
-    "jump": "Space",
-    "steer_left": "Left Arrow",
-    "steer_right": "Right Arrow",
-    "boost": "Shift"
-  },
-
-  "objectives": ["Win races", "Collect bamboo coins"],
-
+  "game_name": "Apple Hop",
+  "dimension": "2D side-scroller",
+  "art_style": "Flat vector art with soft gradients",
+  "camera_view": "side",
+  "setting": "A grassy meadow with floating platforms",
+  "characters": [
+    {
+      "name": "Bouncey",
+      "controls": {
+        "left": "left",
+        "right": "right",
+        "jump": "space"
+      }
+    }
+  ],
+  "game_mechanics": [
+    "Hop left/right across platforms in 2D space.",
+    "Avoid gaps—falling resets to last platform.",
+    "Collect an apple sprite for +1 point and play sparkle effect.",
+    "Landing resets jump ability once per platform."
+  ],
+  "objects": [
+    {
+      "name": "apple",
+      "description": "A shiny red apple sprite with a leaf and sparkle effect.",
+      "collectible": true
+    },
+    {
+      "name": "spring pad",
+      "description": "A green coiled spring tile that boosts jump height.",
+      "collectible": false
+    }
+  ],
   "assets_required": {
-    "backgrounds": ["bamboo_forest", "race_track"],
-    "ui_elements": ["start_button", "pause_menu", "score_display"]
+    "Bouncey": { "description": "A round green character blob sprite with hop/run frames." },
+    "meadow": { "description": "2D background of grass, hills, and trees." },
+    "apple tracker": { "description": "UI bar showing apples collected as icons." },
+    "apple": { "description": "Cartoon apple sprite with glow animation." },
+    "spring pad": { "description": "Animated springboard tile under a platform." }
   },
-
   "sounds_required": {
-    "background_music": ["race_theme", "win_theme"],
-    "sound_effects": ["jump", "boost", "collision"]
+    "apple_collect": { "description": "Crunchy munch when collecting an apple sprite." },
+    "bounce_jump": { "description": "Boing-boing sound on spring pad bounce." },
+    "meadow_theme": { "description": "Gentle acoustic loop with bird chirps." },
+    "spring_bounce": { "description": "Twangy spring sound on bounce." }
+  },
+  "objectives": {
+    "win_condition": "Collect 15 apples and reach the final floating platform.",
+    "scoring": "Each apple is 1 point; unused jumps convert to time bonus."
   }
 }

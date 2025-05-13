@@ -26,40 +26,75 @@ class GameDesignerAgent:
         # Read the JSON file
         with open(r'dataset/game_design_data.json', 'r') as file:
           json_content = json.load(file)
+          game_structure = """
+            {
+               "game_name": "<game_name>",
+                "art_style": "<art_style>",
+                "setting": "<setting>",
+                "characters": [
+                {
+                    "name": "<character_name>",
+                    "controls": {
+                    "left": "left",
+                    "right": "right",
+                    "jump": "space"
+                        }
+                    }
+                ],
+                "objects": [
+                    {
+                    "name": "<object_name>",
+                    "description": "<what it looks like or does>",
+                    "collectible": true
+                    }
+                ],
+                "game_mechanics": [
+                "<mechanic_1>",
+                "<mechanic_2>",
+                "<mechanic_3>"
+                ],
+                "assets_required": {
+                "<asset_1>": { "description": "<description>" },
+                "<asset_2>": { "description": "<description>" },
+                "<asset_3>": { "description": "<description>" },
+                ...
+                },
+                "sounds_required": {
+                "<sound_1>": { "description": "<description>" },
+                "<sound_2>": { "description": "<description>" },
+                "<sound_3>": { "description": "<description>" },
+                ...
+                }
+            }
+            """
         
         prompt =  f"""
-        You are an expert game designer. 
-        Design a new video game based on the following idea:
+            You are an expert game designer. 
+            Design a new video game based on the following idea:
 
-        Idea: {concept}
+            Idea: {concept}
 
-        Output the game design strictly in the following JSON format, dont add any extra column:
-        {{
-        "game_name": "<game_name>",
-        "art_style": "<art_style>",
-        "setting": "<setting>",
-        "characters": ["<character1>", "<character2>", "..."],
-        "mechanics": ["<mechanic1>", "<mechanic2>", "..."],
-        "controls": {{"<control1>": "<key>", "<control2>": "<key>"}},
-        "objectives": ["<objective1>", "<objective2>", "..."],
-        "assets_required": {{"<asset_type>": ["<asset1>", "<asset2>"]}},
-        "sounds_required": {{"<sound_type>": ["<sound1>", "<sound2>"]}}
-        }}
+            Output the game design strictly in the following JSON format, don't add any extra column:
+            {game_structure}
+           
+            Keep the overall game setting very simple.
 
-        Keep the overall game setting very simple.
-        
-        Use this as reference : {json.dumps(json_content)}
-        """
+            // Use this as reference : {json.dumps(json_content)}
+            """
+
 
         completion = self.client.chat.completions.create(
             model=self.model_name,
-            messages=[{"role": "user", "content": prompt}],
+              messages=[
+                {"role": "system", "content": "You are an expert game designer."},
+                {"role": "user", "content": prompt}
+            ],
             temperature=0.9,
             top_p=0.8,
-            max_tokens=600,
+            max_tokens=1024,
             stream=True
         )
-
+        print(completion)
         # Collect streamed chunks into full text
         full_content = ""
         for chunk in completion:
@@ -97,6 +132,6 @@ if __name__ == "__main__":
     agent = GameDesignerAgent(
         base_model="google/gemma-3-1b-it"
     )
-    concept = "A cozy Mario racing game in a haunted library."
+    concept = "I want to build a game where dragon fly and collect coins."
     print("\n=== Generated Game Design ===\n")
     print(agent.generate_game_config(concept))
