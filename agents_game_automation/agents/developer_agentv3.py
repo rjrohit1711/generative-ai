@@ -1,10 +1,14 @@
 # agents/developer_agent.py
 
 import os, sys, ast
+from dotenv import load_dotenv
 import json
 from typing import Dict, List, Tuple
-from openai import OpenAI
-from dotenv import load_dotenv
+
+
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage, AIMessage
+from langchain_community.chat_message_histories import ChatMessageHistory 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import utils.constants as Constants
@@ -28,30 +32,37 @@ class DeveloperAgent:
         if not api_key:
             raise ValueError("QWEN_API_KEY not set in .env")
 
-        self.client = OpenAI(
-            base_url="https://integrate.api.nvidia.com/v1",
-            api_key=api_key
+        self.client = ChatOpenAI(
+            model=os.getenv("OPENAI_MODEL"),
+            openai_api_key=api_key,  
+            openai_api_base=os.getenv("OPENAI_API_BASE"), 
+            temperature=float(os.getenv("LLM_TEMPERATURE", 0.1))
         )
         self.model = model
         self.config_path = config_path
         self.output_dir = output_dir
         os.makedirs(self.output_dir, exist_ok=True)
 
-        # A brief summary of generated modules
-        self.summary: List[str] = []
+        self.store = {}
 
     def _llm(self, prompt: str) -> str:
+        response = self.client.invoke(prompt)
+        return response.content.strip()
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": "You are an expert Python/Pygame game developer."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.1,
-            max_tokens=4096
-        )
-        return response.choices[0].message.content.strip()
+    def get_conversation_prompt(self, messages):
+        # Create a prompt with the full message history
+        history_prompt = ""
+        for message in messages:
+            if isinstance(message, HumanMessage):
+                history_prompt += f"Human: {message.content}\n"
+            elif isinstance(message, AIMessage):
+                history_prompt += f"AI: {message.content}\n"
+        return history_prompt + "Human: {input}\n"
+
+    def get_message_history(self, session_id: str):
+        if session_id not in self.store:
+            self.store[session_id] = ChatMessageHistory()
+        return self.store[session_id]
 
     def _strip_fences(self, code: str) -> str:
     # Detect triple backtick fenced code block and extract inner content
@@ -99,7 +110,7 @@ class DeveloperAgent:
             
             # Safely parse the keys list literal
             try:
-                keys = ast.literal_eval(keys_str)
+                keys = [k.strip() for k in keys_str.split(",") if k.strip()]
             except Exception as e:
                 raise ValueError(f"Failed to parse keys on line: {line!r}\n  {e}")
             
@@ -139,31 +150,48 @@ class DeveloperAgent:
         # Define tasks: (filename, high-level instruction, needed config keys)
         for _ in range(2):
             task_prompt = f"""
+                You are a game developer assistant. I will provide a game configuration file in JSON format. Based on this config, your task is to **design a modular Pygame-based game architecture**.
+                Strictly use the config provided.
+                Your output must follow the structure shown below and strictly adhere to this format:
 
-                Previous Summary that was rejected by me - {task_summary}
-
-                Here is the config file:
-                game_config.json: {self.config}
-
-                You are a game developer assistant. I will provide you with a game configuration in JSON format. Your task is to design a simple game using Pygame based on the data from this config file.
-
-                `filename.py | A concise summary of that Class | List of related config keys (from the JSON)`
-
-                Use `|` as a separator and use this format and make it enclosed in ```:
-                \n
-                ```
-                str | str | List of [ str ]
-                str | str | List of [ str ]
-                str | str | List of [ str ]
-                str | str | List of [ str ]
-                str | str | List of [ str ]
-                str | str | List of [ str ]
+                Tasks:
+                filename.py | A concise summary of that class/module | List of relevant config keys (from the JSON)
+                filename.py | A concise summary of that class/module | List of relevant config keys (from the JSON)
                 ...
-                ```
-                Follow above format strictly to generate data.
-                First define individual components, after that define components which will integrate them to make game.
-                \n
-                Do not generate any actual code yet—just the structured design and class breakdown. Just output the task entires.
+             
+                - Use `|` as a separator.
+                - Do **not** include any explanation, code, or markdown headings — just the block enclosed in triple backticks as shown above.
+                - Be concise but clear in summaries.
+
+                ### Structure Rules:
+
+                1. **Start with individual component classes** — These should be low-level, focused on specific responsibilities like:
+                - Entity definitions (e.g., player, apple, stone)
+                - Spawner logic
+                - Input handling
+                - HUD display
+                - Asset/sound loading
+                - Config loading
+
+                2. **Then define integration classes** — These should tie the system together, such as:
+                - Level manager
+                - Game engine loop
+                - Collision/physics manager
+                - Game state controller
+                - Main class
+                ---
+
+                ### Input:
+
+                - **Previously rejected summary**:  
+                {task_summary}
+
+                - **Game configuration file** (`game_config.json`):  
+                {self.config}
+
+                ---
+
+                Now, output only the structured list of classes/modules as per the format.
                 """
             
             task_report = self._llm(task_prompt)
@@ -180,10 +208,14 @@ class DeveloperAgent:
         return None, None
     
     def _code(self, summary_str, tasks, i):
+        session_id = "rohit-session"
+    
         for filename, instruction, keys in tasks:
+            history = self.get_message_history(session_id)        
+            # Generate the prompt from the history
+            summary_str = self.get_conversation_prompt(history.messages)
             # Build minimal subconfig for this module
             subconfig = {k: self.config.get(k) for k in keys}
-            summary_str = '\n'.join(self.summary) if self.summary else '- none'
             # Promt llm to generate class signature for given instruction and subconfig and capture results.
             stub_prompt = f"""
 
@@ -256,8 +288,7 @@ class DeveloperAgent:
             
             raw_code = self._llm(final_prompt)
             final_code = self._strip_fences(raw_code)
-            if(i == 0):                
-                self.summary.append(final_code)
+            history.add_user_message(final_code)
             # Save file
             self._write_file(filename, final_code)
 
