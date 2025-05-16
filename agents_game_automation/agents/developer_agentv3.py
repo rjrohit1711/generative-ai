@@ -222,7 +222,6 @@ class DeveloperAgent:
             """
             stub_code = self._llm(stub_prompt)
             print(f"STUB Code generated. {stub_code}")
-            history.add_user_message(stub_code)
 
             # Prompt llm to write implementation.
             impl_prompt = f"""
@@ -245,6 +244,8 @@ class DeveloperAgent:
             ```python
             {impl_code}"
             - Add "__main__" to run class independently as well for testing purposes.
+            - Make sure to use same thread to run code so to catch errors in main thread.
+            - Make sure to test all functions.
             - Make sure not to add any infinite loop or human interaction in `main` call as AI will be testing this automatically, add a timeout of 10 seconds.
             """
             main_code = self._llm(main_prompt)
@@ -278,7 +279,12 @@ class DeveloperAgent:
             self._write_file("summary.txt", summary_str)
 
             # Prompt tester agent to write a test class and test it.
-            TesterAgent().test_agent(os.path.join(self.output_dir, filename), summary_str, subconfig)
+            full_path = os.path.join(self.output_dir, filename)
+            TesterAgent().test_agent(full_path, summary_str, subconfig)
+
+            with open(full_path, 'r', encoding='utf-8') as f:
+                final_tested_code = f.read()
+            history.add_user_message(final_tested_code)
 
 # Runner
 if __name__ == "__main__":

@@ -121,7 +121,7 @@ class TesterAgent:
             2. If there is an error, extract the real file from the traceback.
             3. Call `patch_code_tool(actual_file, <error>, <AI Thought>)`.
             4. Once `test_code` succeeds, ask for `human_feedback` and decide if another patch is needed.
-            5. Repeat until the code works (or up to 30 times). Every 5 iterations, always call `human_feedback`.
+            5. Repeat until the code works (or human_feedback is positive). Every 5 iterations, always call `human_feedback`.
             6. You may use files from: {files_list}
             7. Summary of project: {summary}
             8. Subconfig used for this file: {subconfig}
@@ -233,7 +233,7 @@ if __name__ == "__main__":
 
     tester_agent = TesterAgent()
     dir = "bin/source/gamev3/"
-    file = "Player.py"
+    file = "Game.py"
     path = os.path.join(dir, file)
     with open(path, "r", encoding="utf-8") as f:
             code = f.read()
