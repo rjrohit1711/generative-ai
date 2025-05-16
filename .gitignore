@@ -1,4 +1,4 @@
 agents_game_automation/.env
 **/bin/
 **/__pycache__/
-**/assets/
+agents_game_automation/assets/
