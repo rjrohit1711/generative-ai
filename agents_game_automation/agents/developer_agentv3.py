@@ -23,22 +23,20 @@ class DeveloperAgent:
 
     def __init__(
         self,
-        model: str = "qwen/qwen2.5-coder-32b-instruct",
         config_path: str = Constants.GAME_CONFIGV3,
         output_dir: str = "bin/source/gamev3"
     ):
         load_dotenv()
-        api_key = os.getenv("QWEN_API_KEY")
+        api_key = os.getenv("LAMA_70")
         if not api_key:
-            raise ValueError("QWEN_API_KEY not set in .env")
+            raise ValueError("LAMA_70 not set in .env")
 
         self.client = ChatOpenAI(
             model=os.getenv("OPENAI_MODEL"),
             openai_api_key=api_key,  
             openai_api_base=os.getenv("OPENAI_API_BASE"), 
-            temperature=float(os.getenv("LLM_TEMPERATURE", 0.1))
+            temperature=float(os.getenv("LLM_TEMPERATURE", 0.2))
         )
-        self.model = model
         self.config_path = config_path
         self.output_dir = output_dir
         os.makedirs(self.output_dir, exist_ok=True)
@@ -150,47 +148,31 @@ class DeveloperAgent:
         # Define tasks: (filename, high-level instruction, needed config keys)
         for _ in range(2):
             task_prompt = f"""
-                You are a game developer assistant. I will provide a game configuration file in JSON format. Based on this config, your task is to **design a modular Pygame-based game architecture**.
-                Strictly use the config provided.
-                Your output must follow the structure shown below and strictly adhere to this format:
+                You are a game developer assistant. I will provide a game configuration file in JSON format. Based on this config, your task is to design a Pygame game.
+                - **Game configuration file** (`game_config.json`):  
+                {self.config}
 
+                Your output must follow the structure shown below and strictly adhere to this format:
                 Tasks:
-                filename.py | A concise summary of that class/module | List of relevant config keys (from the JSON)
-                filename.py | A concise summary of that class/module | List of relevant config keys (from the JSON)
+                filename.py | A  Detailed functionality of that class/module and also mention its dependencies on other classes. | List of relevant config keys (from the JSON)
                 ...
              
                 - Use `|` as a separator.
                 - Do **not** include any explanation, code, or markdown headings — just the block enclosed in triple backticks as shown above.
-                - Be concise but clear in summaries.
-
+ 
                 ### Structure Rules:
 
-                1. **Start with individual component classes** — These should be low-level, focused on specific responsibilities like:
-                - Entity definitions (e.g., player, apple, stone)
-                - Spawner logic
-                - Input handling
-                - HUD display
-                - Asset/sound loading
-                - Config loading
+                1. **Start with individual component classes** — These should be low-level, focused on specific responsibilities.
+                - Make sure they expose expected functionalities so that other classes can integrate them.
+                - Make as small class as possible for each objects, character or entities in the game.
 
-                2. **Then define integration classes** — These should tie the system together, such as:
-                - Level manager
-                - Game engine loop
-                - Collision/physics manager
-                - Game state controller
-                - Main class
-                ---
+                2. **Then define integration classes** — These should tie the system together.
 
                 ### Input:
 
                 - **Previously rejected summary**:  
                 {task_summary}
-
-                - **Game configuration file** (`game_config.json`):  
-                {self.config}
-
                 ---
-
                 Now, output only the structured list of classes/modules as per the format.
                 """
             
@@ -209,9 +191,11 @@ class DeveloperAgent:
     
     def _code(self, summary_str, tasks, i):
         session_id = "rohit-session"
+        history = self.get_message_history(session_id)
+        history.add_user_message(str(self.config))
+        history.add_user_message(summary_str)
     
-        for filename, instruction, keys in tasks:
-            history = self.get_message_history(session_id)        
+        for filename, instruction, keys in tasks:       
             # Generate the prompt from the history
             summary_str = self.get_conversation_prompt(history.messages)
             # Build minimal subconfig for this module
@@ -233,51 +217,53 @@ class DeveloperAgent:
             - Docs
             - class or function signatures
             - `todo` in method bodies
+            - Copy required config data as class constants individually, don't just copy them json objects.
+            - Make sure to import and reuse already defined classes from the summary provided.
             """
             stub_code = self._llm(stub_prompt)
             print(f"STUB Code generated. {stub_code}")
+            history.add_user_message(stub_code)
 
             # Prompt llm to write implementation.
             impl_prompt = f"""
             You have this stub in `{filename}`:
+            Summary {summary_str}
             ```python
             {stub_code}
             CONFIG : {json.dumps(subconfig, indent=2)} INSTRUCTION: "{instruction}"
-            Please replace every `todo` with working implementation.
-            Remove doc strings, not required anymore.
-            Return the full, updated Python file only. 
+            - Please replace every `todo` with working implementation.
+            - Remove doc strings, not required anymore.
+            - Return the full, updated Python file only.
+            - Make sure to import and reuse already defined classes from the summary provided.
             """
             impl_code = self._llm(impl_prompt)
             print(f"IMPL Code generated. {impl_code}")
+
+            # Prompt llm to write main function.
+            main_prompt = f"""
+            You have this stub in `{filename}`:
+            ```python
+            {impl_code}"
+            - Add "__main__" to run class independently as well for testing purposes.
+            - Make sure not to add any infinite loop or human interaction in `main` call as AI will be testing this automatically, add a timeout of 10 seconds.
+            """
+            main_code = self._llm(main_prompt)
+            print(f"IMPL Code generated. {main_code}")
 
             # Prompt llm to refine/check for errors.
             lint_prompt = f"""
             Your implementation of `{filename}` may have lint or syntax issues.  
             Run `flake8` and fix ANY errors.
+            Remove unused variables and import.
 
             Here is the current code:
             ```python
-            {impl_code}
+            {main_code}
             Remove doc strings, not required anymore.
             Return the complete corrected file—do not alter logic, only style/syntax. """
             impl_code = self._llm(lint_prompt)
             print(f"LINT Code generated. {impl_code}")
 
-            # Prompt tester agent to write a test class and test it.
-            # test_results = TesterAgent().test_code(filename, impl_code)
-            test_results = None
-
-            # Provide feedback if encounter any errors to llm.
-            if(test_results is not None):
-                refine_prompt =  f"""
-                Your tests for `{filename}` failed with this output:
-                {test_results}
-
-                Please correct only the parts of `{filename}` that cause these failures.  
-                Return the full, fixed Python file.
-                """
-                impl_code = self._llm(refine_prompt)
-                
             # Final iteration and save as done below 
             final_prompt = f"""
                 All tests now pass for `{filename}`.  
@@ -288,9 +274,11 @@ class DeveloperAgent:
             
             raw_code = self._llm(final_prompt)
             final_code = self._strip_fences(raw_code)
-            history.add_user_message(final_code)
-            # Save file
             self._write_file(filename, final_code)
+            self._write_file("summary.txt", summary_str)
+
+            # Prompt tester agent to write a test class and test it.
+            TesterAgent().test_agent(os.path.join(self.output_dir, filename), summary_str, subconfig)
 
 # Runner
 if __name__ == "__main__":
