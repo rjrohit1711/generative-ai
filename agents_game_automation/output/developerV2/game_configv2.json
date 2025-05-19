@@ -1,0 +1,147 @@
+{
+  "game_info": {
+    "name": "Apple Hop",
+    "version": "1.0.0",
+    "description": "Bouncey moves left and right to catch falling apples while avoiding stones!"
+  },
+  "screen": {
+    "width": 500,
+    "height": 600,
+    "frame_rate": 60,
+    "scroll_speed": 4
+  },
+  "entities": [
+    {
+      "id": "player",
+      "type": "character",
+      "sprite": "bouncey",
+      "health": 3,
+      "controls": {
+        "left": "K_LEFT",
+        "right": "K_RIGHT"
+      }
+    },
+    {
+      "id": "apple",
+      "type": "collectible",
+      "sprite": "apple",
+      "score": 1
+    },
+    {
+      "id": "stone",
+      "type": "obstacle",
+      "sprite": "stone",
+      "damage": 1
+    }
+  ],
+  "spawners": [
+    {
+      "id": "apple_spawner",
+      "entity": "apple",
+      "infinite": true,
+      "interval_sec": 1.5,
+      "fall_speed": 2,
+      "max_on_screen": 4
+    },
+    {
+      "id": "stone_spawner",
+      "entity": "stone",
+      "infinite": true,
+      "interval_sec": 1,
+      "fall_speed": 1,
+      "max_on_screen": 4
+    }
+  ],
+  "levels": [
+    {
+      "id": "level_1",
+      "use_spawners": ["apple_spawner", "stone_spawner"]
+    }
+  ],
+  "objective": {
+    "type": "score",
+    "target": 15,
+    "description": "Catch apples to earn points. Avoid stones or lose health.",
+    "steps": [
+      "Watch apples and stones fall from the top.",
+      "Move Bouncey left and right to catch apples.",
+      "If you touch a stone, you lose 1 health point.",
+      "Each caught apple adds 1 to your score.",
+      "Reach 15 points to win the level."
+    ],
+    "win_message": "You collected 15 apples! Level Complete!",
+    "lose_message": "Bouncey ran out of health! Game Over!"
+  },
+  "mechanics": [
+    "Apples and stones fall down from the top of the screen.",
+    "No more than the specified number of apples or stones can be on screen at once.",
+    "When Bouncey touches an apple, the score goes up by 1 and the apple disappears.",
+    "When Bouncey touches a stone, Bouncey loses 1 health and the stone disappears.",
+    "Bouncey's movement is limited to the screen area only.",
+    "The game ends in victory when score reaches 15, or in defeat when health reaches 0."
+  ],
+  "hud": {
+    "description": "Displays player's score and health visibly on the screen.",
+    "score_display": {
+      "position": { "x": 10, "y": 10 },
+      "font_size": 24,
+      "color": "#FFFFFF",
+      "label": "Score"
+    },
+    "health_display": {
+      "position": { "x": 700, "y": 10 },
+      "font_size": 24,
+      "color": "#FF0000",
+      "label": "Health"
+    }
+  },
+  "assets_required":[
+    {
+      "asset": "scene_background",
+      "description": "Ggame background: panoramic twilight forest clearing under a violet-orange gradient sky.",
+      "path": "assets/sprites/scene_background.png"
+    },
+    {
+      "asset": "bouncey",
+      "description": "Sprite image of the player character Bouncey.",
+      "path": "assets/sprites/bouncey.png"
+    },
+    {
+      "asset": "apple",
+      "description": "Sprite image for the collectible apple.",
+      "path": "assets/sprites/apple.png"
+    },
+    {
+      "asset": "stone",
+      "description": "A black stone, slightly irregular shape with rough edges, side-on view, simple shading to suggest texture.",
+      "path": "assets/sprites/stone.png"
+    }
+  ],
+    "sounds_required": [
+    {
+      "asset": "background_music",
+      "description": "Slow and soft background music for the game.",
+      "path": "assets/sounds/background_music.wav"
+    },
+    {
+      "asset": "apple_catch",
+      "description": "Quick sound effect played when the player successfully catches an apple.",
+      "path": "assets/sounds/apple_catch.wav"
+    },
+    {
+      "asset": "stone_hit",
+      "description": "Quick sound effect when the player hits the wall or boundary.",
+      "path": "assets/sounds/stone_hit.wav"
+    },
+    {
+      "asset": "win",
+      "description": "Victory sound effect played when the player wins the game.",
+      "path": "assets/sounds/win.wav"
+    },
+    {
+      "asset": "lose",
+      "description": "Game over sound played when the player loses all health.",
+      "path": "assets/sounds/lose.wav"
+    }
+  ]
+}

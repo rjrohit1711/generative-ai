@@ -101,10 +101,10 @@ class DeveloperAgent:
             
             # Split by '|' and strip whitespace
             parts = [part.strip() for part in line.split('|')]
-            if len(parts) != 3:
-                raise ValueError(f"Line does not have exactly 3 parts: {line!r}")
+            if len(parts) != 4:
+                raise ValueError(f"Line does not have exactly 4 parts: {line!r}")
             
-            name, instruction, keys_str = parts
+            name, instruction, keys_str, classes = parts
             
             # Safely parse the keys list literal
             try:
@@ -114,8 +114,9 @@ class DeveloperAgent:
             
             if not isinstance(keys, list) or not all(isinstance(k, str) for k in keys):
                 raise ValueError(f"Parsed keys is not a list of strings: {keys!r}")
-            
-            tasks.append((name, instruction, keys))
+            if ".py" not in name:
+                name = f"{name}.py"
+            tasks.append((name, instruction, keys, classes))
         
         return tasks
 
@@ -153,34 +154,33 @@ class DeveloperAgent:
                 {self.config}
 
                 Your output must follow the structure shown below and strictly adhere to this format:
-                Tasks:
-                filename.py | A  Detailed functionality of that class/module and also mention its dependencies on other classes. | List of relevant config keys (from the JSON)
-                ...
-             
+                
+                ```
+                filename.py | A  Detailed functionality of that class/module and also mention its dependencies on other classes. | List of relevant config keys (from the Config) | List classes this class dependens upon or none if nothing is dependent
+                filename.py | A  Detailed functionality of that class/module and also mention its dependencies on other classes. | List of relevant config keys (from the Config) | List classes this class dependens upon or none if nothing is dependent
+                ```
+                ### Structure Rules:
                 - Use `|` as a separator.
                 - Do **not** include any explanation, code, or markdown headings — just the block enclosed in triple backticks as shown above.
- 
-                ### Structure Rules:
 
                 1. **Start with individual component classes** — These should be low-level, focused on specific responsibilities.
                 - Make sure they expose expected functionalities so that other classes can integrate them.
                 - Make as small class as possible for each objects, character or entities in the game.
 
                 2. **Then define integration classes** — These should tie the system together.
+                - Make sure order is sorted, i.e. start with classes that does have dependency on other classes and so on.
+                - Add task to have start screen and win lose screen.
 
-                ### Input:
-
-                - **Previously rejected summary**:  
+                - **Previously rejected summary**: 
+                Based on this remove any redundant classes are not not likely going to be used. 
                 {task_summary}
-                ---
-                Now, output only the structured list of classes/modules as per the format.
                 """
             
             task_report = self._llm(task_prompt)
             print(f"Report: {task_report}")
             summary_str = task_report
 
-            tasks: List[Tuple[str, str, List[str]]] = self.parse_tasks(task_report)
+            tasks: List[Tuple[str, str, List[str], list[str]]] = self.parse_tasks(task_report)
 
             print(f"Tasks: {tasks}")
             task_summary = task_report
@@ -192,10 +192,9 @@ class DeveloperAgent:
     def _code(self, summary_str, tasks, i):
         session_id = "rohit-session"
         history = self.get_message_history(session_id)
-        history.add_user_message(str(self.config))
         history.add_user_message(summary_str)
     
-        for filename, instruction, keys in tasks:       
+        for filename, instruction, keys, classes in tasks:       
             # Generate the prompt from the history
             summary_str = self.get_conversation_prompt(history.messages)
             # Build minimal subconfig for this module
@@ -213,7 +212,7 @@ class DeveloperAgent:
             CONFIG   : {json.dumps(subconfig, indent=2)}
 
             OUTPUT ONLY:
-            - necessary imports
+            - necessary imports based on its dependent classes {classes}
             - Docs
             - class or function signatures
             - `todo` in method bodies
@@ -238,53 +237,59 @@ class DeveloperAgent:
             impl_code = self._llm(impl_prompt)
             print(f"IMPL Code generated. {impl_code}")
 
-            # Prompt llm to write main function.
-            main_prompt = f"""
-            You have this stub in `{filename}`:
-            ```python
-            {impl_code}"
-            - Add "__main__" to run class independently as well for testing purposes.
-            - Make sure to use same thread to run code so to catch errors in main thread.
-            - Make sure to test all functions.
-            - Make sure not to add any infinite loop or human interaction in `main` call as AI will be testing this automatically, add a timeout of 10 seconds.
-            """
-            main_code = self._llm(main_prompt)
-            print(f"IMPL Code generated. {main_code}")
+            # # Prompt llm to write main function.
+            # main_prompt = f"""
+            # You have this stub in `{filename}`:
+            # ```python
+            # {impl_code}"
+            # - Add "__main__" to run class independently as well for testing purposes.
+            # - Make sure to use main thread to run code so to catch errors in main thread. Don't create new threads.
+            # - Make sure to test all functions.
+            # - Any imports or constants used for testing should only be imported in main. 
+            # - Make sure not to add any infinite loop or human interaction in `main` call as AI will be testing this automatically, add a timeout of 10 seconds.
+            # """
+            # main_code = self._llm(main_prompt)
+            # print(f"IMPL Code generated. {main_code}")
 
             # Prompt llm to refine/check for errors.
             lint_prompt = f"""
             Your implementation of `{filename}` may have lint or syntax issues.  
             Run `flake8` and fix ANY errors.
             Remove unused variables and import.
+            Dependant classes for this file {classes}, remove any which are mentioned here.
 
             Here is the current code:
             ```python
-            {main_code}
+            {impl_code}
             Remove doc strings, not required anymore.
             Return the complete corrected file—do not alter logic, only style/syntax. """
             impl_code = self._llm(lint_prompt)
             print(f"LINT Code generated. {impl_code}")
 
-            # Final iteration and save as done below 
-            final_prompt = f"""
-                All tests now pass for `{filename}`.  
-                As a last step, please add a brief module‐level docstring at the top 
-                summarizing its responsibility, then return the final file.
-                {impl_code}
-                """
+            impl_code = self._strip_fences(impl_code)
+            self._write_file(filename, impl_code)
             
-            raw_code = self._llm(final_prompt)
-            final_code = self._strip_fences(raw_code)
-            self._write_file(filename, final_code)
-            self._write_file("summary.txt", summary_str)
+            os.makedirs(f"{self.output_dir}/Summary/", exist_ok=True)
+            self._write_file("summary/summary.txt", summary_str)
 
             # Prompt tester agent to write a test class and test it.
             full_path = os.path.join(self.output_dir, filename)
-            TesterAgent().test_agent(full_path, summary_str, subconfig)
+            # TesterAgent().test_agent(full_path, summary_str, self.config, classes)
 
             with open(full_path, 'r', encoding='utf-8') as f:
                 final_tested_code = f.read()
-            history.add_user_message(final_tested_code)
+            
+            # Remove any testing code. 
+            final_prompt = f"""
+                All tests now pass for `{filename}`.  
+                Please remove testing code from this and clean it. Without modifying any logic.
+                {final_tested_code}
+                """
+            final_code = self._llm(final_prompt)
+            print(f"Final Code generated. {final_code}")
+            final_code = self._strip_fences(final_code)
+            self._write_file(filename, final_code)
+            history.add_user_message(final_code)
 
 # Runner
 if __name__ == "__main__":

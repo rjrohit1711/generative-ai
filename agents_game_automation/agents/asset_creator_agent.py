@@ -31,38 +31,56 @@ class AssetCreatorAgent:
         # Load game configuration
         with open(self.configPath, "r", encoding="utf-8") as f:
             config = json.load(f)
-        screen_cfg = config.get("screen", {})
-        screen_width  = screen_cfg.get("width")   # default fallback
-        screen_height = screen_cfg.get("height")
-        screen_size = [screen_width, screen_height]
-        tasks = []
-        for asset_info in config.get("assets_required", []):
-            name = asset_info.get("asset", "unnamed")
-            desc = asset_info.get("description", "")
-            prompt = f"Generate high quality pixel-art assets for given description: {desc}"
-            filename = f"{name.replace(' ', '_').lower()}.png"
-            tasks.append((prompt, filename))
 
-        output_dir = os.path.join("bin", "source", "assets", "sprites")
+        game_screen_cfg = config.get("screens", {}) \
+                        .get("game_screen", {}) \
+                        .get("screen", {})
+        screen_width  = game_screen_cfg.get("width")
+        screen_height = game_screen_cfg.get("height")
+        screen_size = [screen_width, screen_height]
+
+        tasks = []
+
+        # Start Screen background
+        start_bg = config.get("game_info", {}) \
+                        .get("start_screen", {}) \
+                        .get("background", {})
+        if start_bg:
+            tasks.append((start_bg.get("description", ""), start_bg.get("assert_path", "")))
+
+        # Other Screens’ backgrounds
+        for screen in config.get("screens", {}).values():
+            bg = screen.get("background", {})
+            if bg:
+                tasks.append((bg.get("description", ""), bg.get("assert_path", "")))
+
+        # Objects’ sprites
+        for obj in config.get("objects", []):
+            desc = obj.get("description", obj.get("role", obj.get("id", "")))
+            sprite_path = obj.get("assert_path", "")
+            tasks.append((desc, sprite_path))
+
+
+        output_dir = os.path.join("assets", "sprites")
         os.makedirs(output_dir, exist_ok=True)
 
-        for prompt, filename in tasks:
-            print(f"🖼️  Generating: {prompt}")
+        for prompt, asset_path in tasks:
+            print(f"🖼️  Generating: {prompt}  Path: {asset_path}")
             # Build generation kwargs, avoid passing None
             gen_kwargs = {
                 "prompt": prompt,
                 "num_inference_steps": 50,
-                "guidance_scale": 10
+                "guidance_scale": 5
             }
 
             result = self.pipe(**gen_kwargs)
             image = result.images[0]
 
             # Save and resize
-            save_path = os.path.join(output_dir, filename)
+            save_path = asset_path
             image.save(save_path)
             with Image.open(save_path) as img:
-                if(filename == "scene_background.png"):
+                if("background" in save_path):
                     img = img.resize(screen_size, Image.Resampling.LANCZOS)
                 else:
                     img = remove(img)
@@ -101,5 +119,5 @@ def strict_trim_and_zoom(image_path, scale=1.0):
         return cropped
 
 if __name__ == "__main__":
-    agent = AssetCreatorAgent(Constants.GAME_CONFIGV2)
+    agent = AssetCreatorAgent(Constants.GAME_CONFIGV3)
     agent.generate_assets()

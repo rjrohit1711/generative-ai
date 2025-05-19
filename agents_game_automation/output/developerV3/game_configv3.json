@@ -1,0 +1,174 @@
+{
+  "game_info": {
+    "name": "Apple Hop",
+    "version": "1.1.0",
+    "description": "Bouncey catch apples and dodge hazards in a twilight forest!"
+  },
+  "screen": {
+    "width": 500,
+    "height": 600,
+    "frame_rate": 60,
+    "scroll_speed": 5
+  },
+  "scene": {
+    "id": "scene_background",
+    "description": "Sunset forest background with orange-violet sky gradient.",
+    "asset_path": "./assets/sprites/scene_background.png"
+  },
+  "entities": [
+    {
+      "id": "player_bouncey",
+      "type": "character",
+      "sprite": "bouncey",
+      "health": 3,
+      "controls": {
+        "left": "K_LEFT",
+        "right": "K_RIGHT"
+      },
+      "description": "Classic player character Bouncey.",
+      "asset_path": "./assets/sprites/bouncey.png"
+    }
+  ],
+  "spawners": [
+    {
+      "id": "apple_spawner",
+      "entity": "apple",
+      "type": "collectible",
+      "sprite": "apple",
+      "score": 1,
+      "description": "A Red apple.",
+      "asset_path": "./assets/sprites/apple.png",
+      "infinite": true,
+      "interval_sec": 1.5,
+      "fall_speed": 2,
+      "max_on_screen": 4
+    },
+    {
+      "id": "golden_apple_spawner",
+      "entity": "golden_apple",
+      "type": "collectible",
+      "sprite": "golden_apple",
+      "score": 3,
+      "description": "Rare golden apple.",
+      "asset_path": "./assets/sprites/golden_apple.png",
+      "infinite": true,
+      "interval_sec": 5,
+      "fall_speed": 1.5,
+      "max_on_screen": 2
+    },
+    {
+      "id": "stone_spawner",
+      "entity": "stone",
+      "type": "obstacle",
+      "sprite": "stone",
+      "damage": 1,
+      "description": "Falling stone with rough edges.",
+      "asset_path": "./assets/sprites/stone.png",
+      "infinite": true,
+      "interval_sec": 1.2,
+      "fall_speed": 1,
+      "max_on_screen": 4
+    },
+    {
+      "id": "bee_spawner",
+      "entity": "bee",
+      "type": "obstacle",
+      "sprite": "bee",
+      "damage": 1,
+      "description": "Fast flying bee that stings if touched.",
+      "asset_path": "./assets/sprites/bee.png",
+      "infinite": true,
+      "interval_sec": 0.8,
+      "fall_speed": 3,
+      "max_on_screen": 5
+    }
+  ],
+  "levels": [
+    {
+      "id": "level_1",
+      "name": "Starter Grove",
+      "use_spawners": ["apple_spawner", "stone_spawner"]
+    },
+    {
+      "id": "level_2",
+      "name": "Golden Hunt",
+      "use_spawners": ["apple_spawner", "golden_apple_spawner", "stone_spawner"]
+    },
+    {
+      "id": "level_3",
+      "name": "Bee Trouble",
+      "use_spawners": ["apple_spawner", "bee_spawner", "stone_spawner"]
+    }
+  ],
+  "gameplay": {
+    "type": "score",
+    "target": 20,
+    "description": "Collect apples and golden apples while dodging stones and bees.",
+    "steps": [
+      "Move your character using the assigned controls.",
+      "Catch falling apples or golden apples.",
+      "Avoid stones and bees to stay alive.",
+      "Reach the target score to win!"
+    ],
+    "rules": [
+      "You gain 1 point for each apple and 3 points for each golden apple.",
+      "Touching a stone or bee costs 1 health.",
+      "Game ends when health is 0 or score reaches the target.",
+      "Stay within screen bounds."
+    ],
+    "win_message": "Awesome! You reached your score goal!",
+    "lose_message": "Oh no! Out of health!"
+  },
+  "hud": {
+    "description": "HUD showing health and score.",
+    "score_display": {
+      "position": { "x": 10, "y": 10 },
+      "font_size": 24,
+      "color": "#FFFFFF",
+      "label": "Score"
+    },
+    "health_display": {
+      "position": { "x": 400, "y": 10 },
+      "font_size": 24,
+      "color": "#FF0000",
+      "label": "Health"
+    }
+  },
+  "sounds": [
+    {
+      "id": "background_music",
+      "description": "Relaxing forest theme music.",
+      "asset_path": "./assets/sounds/background_music.wav"
+    },
+    {
+      "id": "apple_catch",
+      "description": "Sound when collecting a regular apple.",
+      "asset_path": "./assets/sounds/apple_catch.wav"
+    },
+    {
+      "id": "golden_apple_catch",
+      "description": "Shimmer sound for golden apple.",
+      "asset_path": "./assets/sounds/golden_apple.wav"
+    },
+    {
+      "id": "stone_hit",
+      "description": "Impact sound when hit by stone.",
+      "asset_path": "./assets/sounds/stone_hit.wav"
+    },
+    {
+      "id": "bee_sting",
+      "description": "Buzzing sting sound effect.",
+      "asset_path": "./assets/sounds/bee_sting.wav"
+    },
+    {
+      "id": "win",
+      "description": "Win sound for completing level.",
+      "asset_path": "./assets/sounds/win.wav"
+    },
+    {
+      "id": "lose",
+      "description": "Lose sound when out of health.",
+      "asset_path": "./assets/sounds/lose.wav"
+    }
+  ]
+}

@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from langchain.agents import Tool
 from langchain.agents import initialize_agent, AgentType
 from langchain.memory import ConversationBufferMemory
+from inputimeout import inputimeout, TimeoutOccurred
 
 class TesterAgent:
     def __init__(
@@ -28,8 +29,6 @@ class TesterAgent:
         )
         
         memory =  ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-        self.output_dir = "bin/source/game/test"
-        os.makedirs(self.output_dir, exist_ok=True)
     
         test_code_tool = Tool(
             name="test_code",
@@ -61,8 +60,10 @@ class TesterAgent:
         self.agent = initialize_agent(
             llm=client,
             tools=tools,
-            agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,# ← enable automatic retry on parse errors
+            agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
             memory=memory,
+            handle_parsing_errors=True,
+            max_iterations=50, 
             verbose=True
         )
 
@@ -90,44 +91,31 @@ class TesterAgent:
         )
         return response.choices[0].message.content.strip()
     
-    def test_agent(self, path, summary = None, subconfig = None):
+    def test_agent(self, path, summary = None, subconfig = None, classes = None):
         directory = os.path.dirname(path)
         files_list =  [
             f for f in os.listdir(directory)
             if os.path.isfile(os.path.join(directory, f))
         ]
+        
         print(f"Files: {files_list}")
         prompt = f"""
-            You are an autonomous coding agent.
+            You are an autonomous coding agent. Use available tools to debug and improve the code.
 
-            You can call tools using this format:
+            You may use files from: {directory}/  
+            Available files: {files_list}  
+            Project Summary: {summary}  
+            Config for Entire project it will have all assets path if required: {subconfig}
 
-            Thought: I need to test the code.
-            Action: test_code
-            Action Input: bin/source/gamev3/Player.py
-
-            Thought: The test failed with an error in Enemy.py, so I’ll patch it.
-            Action: patch_code_tool
-            Action Input: bin/source/gamev3/Enemy.py||NameError: name 'pygame' is not defined||Add `import pygame` at the top.
-
-            Thought: Tests passed. I will now ask for feedback.
-            Action: human_feedback
-            Action Input: All tests passed. Ask user if anything else should be improved.
-
-            ---
-
-            Your steps:
-            1. Run `test_code({path})`.
-            2. If there is an error, extract the real file from the traceback.
-            3. Call `patch_code_tool(actual_file, <error>, <AI Thought>)`.
-            4. Once `test_code` succeeds, ask for `human_feedback` and decide if another patch is needed.
-            5. Repeat until the code works (or human_feedback is positive). Every 5 iterations, always call `human_feedback`.
-            6. You may use files from: {files_list}
-            7. Summary of project: {summary}
-            8. Subconfig used for this file: {subconfig}
+            Instructions:
+            1. Run `test_code(<path>)`.
+            2. If an error occurs, call `patch_code_tool(<file>||<error>||<fix>)`, then repeat step 1.
+            3. If the test passes, call `human_feedback`.
+            4. If the same error or patch repeats multiple times, assume you're stuck in a loop and request human feedback before continuing.
 
             Begin.
             """
+
         self.agent.run(prompt)
 
     def test_code(self, path: str) -> str:
@@ -205,8 +193,12 @@ class TesterAgent:
         return "Patch done"
     
     def human_feedback(self, filepath):
-        inputs = input(f"Enter feedback for file: {filepath}")
-        return inputs
+        
+        try:
+            user_input = inputimeout(prompt=f'Enter Feedback for {filepath}: ', timeout=100)
+        except TimeoutOccurred:
+            user_input = 'Ok'
+        return user_input
 
     def _strip_fences(self, code: str) -> str:
     # Detect triple backtick fenced code block and extract inner content
@@ -237,4 +229,12 @@ if __name__ == "__main__":
     path = os.path.join(dir, file)
     with open(path, "r", encoding="utf-8") as f:
             code = f.read()
-    tester_agent.test_agent(path)
+    
+    summary_path = os.path.join(dir, "Summary/summary.txt")
+    with open(summary_path, "r", encoding="utf-8") as f:
+            summary = f.read()
+    json_path = "bin/source/game_configv3.json"
+    with open(json_path, "r", encoding="utf-8") as f:
+            json = f.read()
+    
+    tester_agent.test_agent(path, summary, json)
