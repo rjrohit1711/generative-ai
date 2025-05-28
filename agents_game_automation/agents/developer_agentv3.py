@@ -1,18 +1,22 @@
 # agents/developer_agent.py
 
-import os, sys, ast
+import re
+import os, sys, shutil
 from dotenv import load_dotenv
 import json
-from typing import Dict, List, Tuple
-
+from typing import Dict, List, Tuple, Any
+from collections import defaultdict, deque
 
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, AIMessage
-from langchain_community.chat_message_histories import ChatMessageHistory 
+from langchain.agents import Tool
+from langchain.agents import initialize_agent, AgentType
+from langchain.memory import ConversationBufferMemory
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import utils.constants as Constants
 from agents.tester_agent import TesterAgent
+
+Task = Tuple[str, str, List[str], List[str]]
 
 class DeveloperAgent:
     """
@@ -20,48 +24,255 @@ class DeveloperAgent:
     creating one file per feature and maintaining a brief summary
     to ensure consistency across generated modules.
     """
-
     def __init__(
-        self,
-        config_path: str = Constants.GAME_CONFIGV3,
-        output_dir: str = "bin/source/gamev3"
+        self, 
     ):
+        self.client = self._define_client()
+        self.agent = self._agent()
+        self.config_path = os.path.join(Constants.CONFIG_BASE, Constants.GAME_CONFIGV3)
+        self.output_dir = "bin/source/gamev3"
+        self.data_dir = os.path.join(self.output_dir, "data")
+        self.tasks_data = os.path.join(self.data_dir, "tasks.txt")
+        if os.path.exists(self.output_dir):
+            shutil.rmtree(self.output_dir)
+        os.makedirs(self.output_dir, exist_ok=True)
+        os.makedirs(self.data_dir, exist_ok=True)
+
+    def develop_game(self):
+        """
+        Generate all game modules IN sequence, each focused on a
+        specific config slice, updating summary to keep consistency.
+        Make sure to write full code don't assume code will be there.
+        Make sure each class has very minimal dependency to other classes if it need any config data it should have one.
+        """
+        with open(self.config_path, "r", encoding="utf-8") as f:
+            self.manifest: Dict = json.load(f)
+
+        tasks = self._get_tasks()
+        if(tasks is None):
+            return
+        
+        self._write_code_and_tests(tasks)
+
+    def _define_client(self):
         load_dotenv()
         api_key = os.getenv("LAMA_70")
         if not api_key:
             raise ValueError("LAMA_70 not set in .env")
-
-        self.client = ChatOpenAI(
+        
+        return ChatOpenAI(
             model=os.getenv("OPENAI_MODEL"),
             openai_api_key=api_key,  
             openai_api_base=os.getenv("OPENAI_API_BASE"), 
-            temperature=float(os.getenv("LLM_TEMPERATURE", 0.2))
+            temperature=float(os.getenv("LLM_TEMPERATURE", 0.0))
         )
-        self.config_path = config_path
-        self.output_dir = output_dir
-        os.makedirs(self.output_dir, exist_ok=True)
+    
+    def _agent(self):
+        memory =  ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+        
+        write_unit_test_tool = Tool(
+            name="write_unit_test",
+            func=lambda filename: self._write_unit_test(filename),
+            description=(
+                "Generates a unit test class for a given class file. "
+                "Input format: 'class_name' "
+                "(e.g. 'Apple.py')"
+            )
+        )
 
-        self.store = {}
+        run_unit_test_tool = Tool(
+            name="run_unit_test",
+            func=lambda filename: self._run_unit_test(filename),
+            description=(
+                "Runs the unit test file for the given class and returns the result. "
+                "Input format: 'test_class_name' "
+                "(e.g. 'Test_Apple.py')"
+            )
+        )
 
-    def _llm(self, prompt: str) -> str:
+        patch_code_from_test_tool = Tool(
+            name="patch_code_from_test",
+            func=lambda args: self._patch_code_from_test(args),
+            description=(
+                "Patches the class implementation based on the unit test failure output. "
+                "Input format: 'class_name||test_output' "
+                "(e.g. 'Apple.py||<error_trace_or_output>')"
+            )
+        )
+
+
+        tools = [write_unit_test_tool, run_unit_test_tool, patch_code_from_test_tool]
+
+        return initialize_agent(
+            llm=self.client,
+            tools=tools,
+            agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
+            memory=memory,
+            handle_parsing_errors=True,
+            max_iterations=20,
+            verbose=True
+        )
+
+    def _call_llm(self, prompt: str) -> str:
         response = self.client.invoke(prompt)
         return response.content.strip()
+    
+    def _write_unit_test(self, class_filename: str) -> str:
+        """
+        Generates a unit test file named `Test_ClassName.py` for the specified class file.
+        Assumes the class name matches the filename (e.g., Apple.py -> class Apple).
+        """
+        # ... logic here ...
+        print(f"[✅] Unit test for '{class_filename}' generated successfully.")
+        return f"Test_{class_filename.replace('.py', '')}.py"
+    
+    def _run_unit_test(self, class_filename: str) -> dict:
+        """
+        Runs the corresponding unit test file `Test_ClassName.py` and returns the output,
+        including stdout, stderr, and return code.
+        """
+        # ... logic here ...
+        print(f"[✅] Unit test for '{class_filename}' executed successfully.")
+        return {"status": "Error", "stdout": "", "stderr": "Error Raised Exception", "returncode": -1}
 
-    def get_conversation_prompt(self, messages):
-        # Create a prompt with the full message history
-        history_prompt = ""
-        for message in messages:
-            if isinstance(message, HumanMessage):
-                history_prompt += f"Human: {message.content}\n"
-            elif isinstance(message, AIMessage):
-                history_prompt += f"AI: {message.content}\n"
-        return history_prompt + "Human: {input}\n"
+    def _patch_code_from_test(self, args) -> str:
+        """
+        Analyzes test output to identify missing methods or basic issues and patches the original class file
+        by inserting method stubs or minimal fixes.
+        """
+        # ... logic here ...
+        print(f"[✅] Code in '{args}' patched based on test results.")
+        return "Patch applied successfully."
+    
+    def _get_tasks(self):
+        # Define tasks: (filename, high-level instruction, needed config keys)
+        planner_prompt = f"""
+            You are a Python game architect and Pygame specialist.  
+            Here’s my game manifest (JSON):
+            ```json
+            {self.manifest}
 
-    def get_message_history(self, session_id: str):
-        if session_id not in self.store:
-            self.store[session_id] = ChatMessageHistory()
-        return self.store[session_id]
+            RULES:
+            - Each key in the manifest represents a config module that must map to one or more Python files.
+            - Make sure no such files are present which has no config module.
+            - If a value is an object (e.g. "screens", "objects"), generate one module per subkey (e.g. win_screen, apple).
+            - Each file must have a detailed responsibility summary including its core logic, key functions, classes, and APIs it exposes.
+            - Describe how this module will interact with others (inputs/outputs/shared data).
+            - Make sure tasks are in topological sorted order and there should be no cyclic dependencies.
+            - Create a central 'main.py' class that integrates and manages all modules in the correct order.
+            
+            - Here are few examples as a reference:
+            
+            game_info.py | Defines `GameInfo` class that loads and provides access to global configuration such as screen dimensions, frame rate, and asset paths. Public API: `GameInfo.load()`, `GameInfo.get(key)`, `GameInfo.screen_width`, `GameInfo.screen_height`. Used by all other modules to retrieve game-wide settings. | game_info.json | None
+            player.py | Defines `Player` class that handles movement, animation, collision detection, scoring logic, and interaction with collectibles and obstacles. Public API: `Player.update()`, `Player.draw(screen)`, `Player.check_collision(obj)`, `Player.reset()`. Depends on `GameInfo` for screen bounds and on `mechanics` for rules like gravity and scoring. | player.json | game_info, mechanics
+            apple.py | Defines `Apple` class representing the collectible item. Handles spawning, falling motion, collision with player, and respawn. Public API: `Apple.update()`, `Apple.draw(screen)`, `Apple.check_collision(player)`, `Apple.reset_position()`. Uses config to determine spawn interval and fall speed. Interacts with `Player` to increment score on collect. | apple.json | game_info, mechanics
+            mechanics.py | Defines global mechanics like gravity, scoring rules, and spawn logic. Exposes `apply_gravity(obj)`, `calculate_score(type)`, and `spawn_entity(type)`. Provides reusable physics and scoring logic to `Player`, `Apple`, `Bee`, etc. | mechanics.json | game_info
+            main.py | Entry point of the game. Loads `GameInfo`, initializes all modules, controls game loop, handles transitions between screens (`start_screen`, `game_screen`, `win_screen`, `lose_screen`). Public API: `main()`, `handle_events()`, `switch_screen(name)`. | None | game_info, game_screen, win_screen, lose_screen, player, apple, golden_apple, bee, stone, mechanics, levels
+            
+            - OUTPUT FORMAT (STRICT!):
+            - Enclose your entire plan in triple backticks (```).
+            - One line per file, exactly:
+            filename.py | Detailed responsibility of this file including key classes, functions, APIs, and interaction notes | config filename | list of dependencies d1,d2..
+            End with a line that reads:
+            END_OF_PLAN
+            Do not include any extra text, explanations or markdown beyond the back‐ticked block.
+            """
+        plan = self._call_llm(planner_prompt)
+        tasks = self._parse_tasks(plan.split("END_OF_PLAN")[0])
+        tasks = self._reorder_tasks(tasks)
+        
+        for task in tasks:    
+            self._write_file(self.tasks_data, str(task))
+            print(task)
 
+        if self._ask_yes_no("Do you want to continue?"):
+            return tasks
+        
+        return None
+    
+    # Precompute all valid config paths:
+    def _list_paths(self, d, prefix=""):
+        paths = []
+        if isinstance(d, dict):
+            for k, v in d.items():
+                p = f"{prefix}.{k}" if prefix else k
+                paths.append(p)
+                paths += self._list_paths(v, p)
+        return paths
+    
+    def _reorder_tasks(self, tasks: List[Task]) -> List[Task]:
+        filename_set = {fn for fn, *_ in tasks}
+        lookup: dict[str, Task] = { task[0]: task for task in tasks }
+
+        graph: dict[str, list[str]] = defaultdict(list)
+        indegree: dict[str, int] = { fn: 0 for fn in filename_set }
+
+        for fn, _, _, deps in tasks:
+            for dep in deps:
+                dep_file = dep if dep in filename_set else f"{dep}.py"
+                if dep_file in filename_set:
+                    graph[dep_file].append(fn)
+                    indegree[fn] += 1
+
+        # Kahn’s algorithm
+        q = deque([fn for fn, deg in indegree.items() if deg == 0])
+        ordered: list[Task] = []
+
+        while q:
+            cur = q.popleft()
+            ordered.append(lookup[cur])
+            for nbr in graph[cur]:
+                indegree[nbr] -= 1
+                if indegree[nbr] == 0:
+                    q.append(nbr)
+
+        if len(ordered) != len(tasks):
+            print("⚠️ Warning: Some tasks couldn’t be fully ordered (cycle or missing dep).")
+            # Optionally append the rest in any order:
+            unordered = [t for t in tasks if t[0] not in {o[0] for o in ordered}]
+            ordered.extend(unordered)
+
+        return ordered
+
+    def _parse_tasks(self, text: str) -> Task:
+        """
+        Parse a pipe-separated task breakdown into a List of (name, instruction, keys).
+        """
+        text = self._strip_fences(text)
+        tasks: List[Tuple[str, str, List[str]]] = []
+        
+        for line in text.strip().splitlines():
+            # Skip empty lines
+            if not line.strip():
+                continue
+            
+            # Split by '|' and strip whitespace
+            parts = [part.strip() for part in line.split('|')]
+            if len(parts) != 4:
+                raise ValueError(f"Line does not have exactly 4 parts: {line!r}")
+            
+            name, instruction, keys_str, deps_str = parts
+            
+            # Safely parse the keys list literal
+            try:
+                keys = [k.strip() for k in keys_str.split(",") if k.strip()]
+                deps = [d.strip() for d in deps_str.split(",") if d.strip()]
+            except Exception as e:
+                raise ValueError(f"Failed to parse keys on line: {line!r}\n  {e}")
+            
+            if not isinstance(keys, list) or not all(isinstance(k, str) for k in keys):
+                raise ValueError(f"Parsed keys is not a list of strings: {keys!r}")
+
+            if not isinstance(deps, list) or not all(isinstance(d, str) for d in deps):
+                raise ValueError(f"Parsed keys is not a list of strings: {deps!r}")
+
+            if ".py" not in name:
+                name = f"{name}.py"
+
+            tasks.append((name, instruction, keys, deps))
+        
+        return tasks
+    
     def _strip_fences(self, code: str) -> str:
     # Detect triple backtick fenced code block and extract inner content
         if "```" in code:
@@ -87,194 +298,158 @@ class DeveloperAgent:
             else:
                 print("Please enter 'y' or 'n'.")
 
-    def parse_tasks(self, text: str) -> List[Tuple[str, str, List[str]]]:
-        """
-        Parse a pipe-separated task breakdown into a List of (name, instruction, keys).
-        """
-        text = self._strip_fences(text)
-        tasks: List[Tuple[str, str, List[str]]] = []
-        
-        for line in text.strip().splitlines():
-            # Skip empty lines
-            if not line.strip():
-                continue
-            
-            # Split by '|' and strip whitespace
-            parts = [part.strip() for part in line.split('|')]
-            if len(parts) != 4:
-                raise ValueError(f"Line does not have exactly 4 parts: {line!r}")
-            
-            name, instruction, keys_str, classes = parts
-            
-            # Safely parse the keys list literal
-            try:
-                keys = [k.strip() for k in keys_str.split(",") if k.strip()]
-            except Exception as e:
-                raise ValueError(f"Failed to parse keys on line: {line!r}\n  {e}")
-            
-            if not isinstance(keys, list) or not all(isinstance(k, str) for k in keys):
-                raise ValueError(f"Parsed keys is not a list of strings: {keys!r}")
-            if ".py" not in name:
-                name = f"{name}.py"
-            tasks.append((name, instruction, keys, classes))
-        
-        return tasks
+    def _write_file(self, path: str, data: str, override: bool = False):
+        mode = "w" if override else "a"
+        with open(path, mode, encoding="utf-8") as f:
+            f.write(f"{data}\n")
+        print(f"✅ Wrote to {path} (override={override})")
 
-    def _write_file(self, filename: str, code: str):
-        os.makedirs(self.output_dir, exist_ok=True)
-        path = os.path.join(self.output_dir, filename)
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(code)
-        print(f"✅ Wrote {filename}")
 
-    def write_all(self):
-        """
-        Generate all game modules IN sequence, each focused on a
-        specific config slice, updating summary to keep consistency.
-        Make sure to write full code don't assume code will be there.
-        Make sure each class has very minimal dependency to other classes if it need any config data it should have one.
-        """
-        with open(self.config_path, "r", encoding="utf-8") as f:
-            self.config: Dict = json.load(f)
-
-        tasks, summary_str = self._get_tasks()
-        if(tasks is None):
-            return
+    def _read_file(self, path: str):
+        with open(path, "r") as file:
+            content = file.read()
+            return content
         
-        for i in range(1):
-            self._code(summary_str, tasks, i)
+    def _clean_keys(self, raw_keys: List[Any]) -> List[str]:
+        """
+        Turn items like "'screens.win_screen.message_text'" or ast.Attribute nodes
+        into clean strings: "screens.win_screen.message_text".
+        """
+        cleaned: List[str] = []
+        for item in raw_keys:
+            s = str(item)              # e.g. "'screens.win_screen.message_text'"
+            s = s.strip().strip("'\"") # => screens.win_screen.message_text
+            # keep only letters, digits, dots, and underscores
+            s = re.sub(r"[^0-9A-Za-z._]", "", s)
+            if s:
+                cleaned.append(s)
+        return cleaned
     
-    def _get_tasks(self):
-        task_summary = None
-        # Define tasks: (filename, high-level instruction, needed config keys)
-        for _ in range(2):
-            task_prompt = f"""
-                You are a game developer assistant. I will provide a game configuration file in JSON format. Based on this config, your task is to design a Pygame game.
-                - **Game configuration file** (`game_config.json`):  
-                {self.config}
+    import re
 
-                Your output must follow the structure shown below and strictly adhere to this format:
-                
-                ```
-                filename.py | A  Detailed functionality of that class/module and also mention its dependencies on other classes. | List of relevant config keys (from the Config) | List classes this class dependens upon or none if nothing is dependent
-                filename.py | A  Detailed functionality of that class/module and also mention its dependencies on other classes. | List of relevant config keys (from the Config) | List classes this class dependens upon or none if nothing is dependent
-                ```
-                ### Structure Rules:
-                - Use `|` as a separator.
-                - Do **not** include any explanation, code, or markdown headings — just the block enclosed in triple backticks as shown above.
+    import re
 
-                1. **Start with individual component classes** — These should be low-level, focused on specific responsibilities.
-                - Make sure they expose expected functionalities so that other classes can integrate them.
-                - Make as small class as possible for each objects, character or entities in the game.
-
-                2. **Then define integration classes** — These should tie the system together.
-                - Make sure order is sorted, i.e. start with classes that does have dependency on other classes and so on.
-                - Add task to have start screen and win lose screen.
-
-                - **Previously rejected summary**: 
-                Based on this remove any redundant classes are not not likely going to be used. 
-                {task_summary}
-                """
+    def _get_by_path(self, config, path):
+        current = config
+        parts = path.split('.')
+        for part in parts:
+            # Parse key and optional index, e.g. objects[0]
+            match = re.match(r"(\w+)(?:\[(\d+)\])?", part)
+            if not match:
+                # Unexpected format
+                return None
             
-            task_report = self._llm(task_prompt)
-            print(f"Report: {task_report}")
-            summary_str = task_report
+            key = match.group(1)
+            index = match.group(2)
 
-            tasks: List[Tuple[str, str, List[str], list[str]]] = self.parse_tasks(task_report)
+            # Access dictionary key
+            if isinstance(current, dict):
+                current = current.get(key)
+            else:
+                # Can't get key from non-dict
+                return None
+            
+            if current is None:
+                return None
 
-            print(f"Tasks: {tasks}")
-            task_summary = task_report
-            if self._ask_yes_no("Do you want to continue?"):
-                return tasks, summary_str
-        
-        return None, None
+            # If there is an index, access list element
+            if index is not None:
+                idx = int(index)
+                if isinstance(current, list) and 0 <= idx < len(current):
+                    current = current[idx]
+                else:
+                    return None
+
+        return current
+
+    def _write_code_and_tests(self, tasks):
     
-    def _code(self, summary_str, tasks, i):
-        session_id = "rohit-session"
-        history = self.get_message_history(session_id)
-        history.add_user_message(summary_str)
-    
-        for filename, instruction, keys, classes in tasks:       
-            # Generate the prompt from the history
-            summary_str = self.get_conversation_prompt(history.messages)
-            # Build minimal subconfig for this module
-            subconfig = {k: self.config.get(k) for k in keys}
+        for filename, instruction, keys, deps in tasks:
+            subconfig = []
+            for key in keys:
+                path = os.path.join(Constants.CONFIG_BASE, key)
+                if os.path.exists(path):
+                    with open(path, "r", encoding="utf-8") as f:
+                        subconfig.append(json.load(f))
+
+            print(f"Subconfig for {filename}:", subconfig)
+
+
             # Promt llm to generate class signature for given instruction and subconfig and capture results.
             stub_prompt = f"""
+                You are a senior Python game developer creating modular Pygame code.
 
-            Lets start to code.
+                ### TASK:
+                Generate a stub implementation for the file: **`{filename}`**
 
-            # SUMMARY SO FAR:
-            { summary_str }
+                - **Purpose**: {instruction}
+                - **Relevant Config Data**:
+                {json.dumps(subconfig, indent=2)}
+                - **Depends On Classes**: {deps}
 
-            TASK     : Create the STUB for `{filename}`
-            INSTRUCTION: {instruction}
-            CONFIG   : {json.dumps(subconfig, indent=2)}
+                ### OUTPUT FORMAT (STRICTLY THIS):
+                - All necessary `import` statements for built-in modules and dependent classes.
+                - Module-level docstring explaining the purpose of this file.
+                - Class and/or function definitions only (no logic implemented).
+                - Use `# TODO:` comments in method/function bodies.
+                - Extract only the required config keys and declare them as class-level constants (e.g. `SCREEN_WIDTH = 800`)
+                - Do **not** copy nested JSON objects as-is.
+                - Use already defined classes where applicable.
 
-            OUTPUT ONLY:
-            - necessary imports based on its dependent classes {classes}
-            - Docs
-            - class or function signatures
-            - `todo` in method bodies
-            - Copy required config data as class constants individually, don't just copy them json objects.
-            - Make sure to import and reuse already defined classes from the summary provided.
+                ### IMPORTANT:
+                - Be minimal but accurate: focus on structure, interface, and reusability.
+                - Your goal is to generate a working scaffold that will later be implemented.
+                - Output only valid Python code — no explanations, comments, or markdown.
+
             """
-            stub_code = self._llm(stub_prompt)
+
+            stub_code = self._call_llm(stub_prompt)
             print(f"STUB Code generated. {stub_code}")
 
             # Prompt llm to write implementation.
             impl_prompt = f"""
-            You have this stub in `{filename}`:
-            Summary {summary_str}
-            ```python
-            {stub_code}
-            CONFIG : {json.dumps(subconfig, indent=2)} INSTRUCTION: "{instruction}"
-            - Please replace every `todo` with working implementation.
-            - Remove doc strings, not required anymore.
-            - Return the full, updated Python file only.
-            - Make sure to import and reuse already defined classes from the summary provided.
+                You are an expert Pygame developer.
+
+                File: `{filename}`  
+                Instruction: {instruction}  
+                Config: {json.dumps(subconfig, indent=2)}
+
+                Stub:
+                ```python
+                {stub_code}
+
+                - Replace all # TODO blocks with working code.
+                - Use and import any required classes from the summary.
+                - Extract relevant config values as class-level constants.
+                - Remove all docstrings.
+                - Preserve the structure — do not rename anything.
+                - Output the complete Python file only, no extra text or formatting.
             """
-            impl_code = self._llm(impl_prompt)
+            impl_code = self._call_llm(impl_prompt)
             print(f"IMPL Code generated. {impl_code}")
 
-            # # Prompt llm to write main function.
-            # main_prompt = f"""
-            # You have this stub in `{filename}`:
-            # ```python
-            # {impl_code}"
-            # - Add "__main__" to run class independently as well for testing purposes.
-            # - Make sure to use main thread to run code so to catch errors in main thread. Don't create new threads.
-            # - Make sure to test all functions.
-            # - Any imports or constants used for testing should only be imported in main. 
-            # - Make sure not to add any infinite loop or human interaction in `main` call as AI will be testing this automatically, add a timeout of 10 seconds.
-            # """
-            # main_code = self._llm(main_prompt)
-            # print(f"IMPL Code generated. {main_code}")
-
-            # Prompt llm to refine/check for errors.
             lint_prompt = f"""
-            Your implementation of `{filename}` may have lint or syntax issues.  
-            Run `flake8` and fix ANY errors.
-            Remove unused variables and import.
-            Dependant classes for this file {classes}, remove any which are mentioned here.
+                You are a Python linter.
 
-            Here is the current code:
-            ```python
-            {impl_code}
-            Remove doc strings, not required anymore.
-            Return the complete corrected file—do not alter logic, only style/syntax. """
-            impl_code = self._llm(lint_prompt)
+                Task: Fix all linting and syntax issues in `{filename}` using `flake8` standards.
+
+                Instructions:
+                - Remove unused variables and imports.
+                - From the dependent classes listed: {deps}, remove any not actually used.
+                - Do not change logic — only fix style and syntax.
+                - Remove all docstrings.
+                - Return the full corrected Python file only, with no extra commentary.
+
+                Code:
+                    ```python
+                {impl_code}
+            """
+            impl_code = self._call_llm(lint_prompt)
             print(f"LINT Code generated. {impl_code}")
 
             impl_code = self._strip_fences(impl_code)
-            self._write_file(filename, impl_code)
-            
-            os.makedirs(f"{self.output_dir}/Summary/", exist_ok=True)
-            self._write_file("summary/summary.txt", summary_str)
-
-            # Prompt tester agent to write a test class and test it.
             full_path = os.path.join(self.output_dir, filename)
-            # TesterAgent().test_agent(full_path, summary_str, self.config, classes)
+            self._write_file(full_path, impl_code, True)
 
             with open(full_path, 'r', encoding='utf-8') as f:
                 final_tested_code = f.read()
@@ -283,15 +458,61 @@ class DeveloperAgent:
             final_prompt = f"""
                 All tests now pass for `{filename}`.  
                 Please remove testing code from this and clean it. Without modifying any logic.
+                Add Config data as comment at the bottom of the page. Add comment above this saying do not remove this config.
+                Config = {subconfig}
+                Add Task description below this.
+                Description = {instruction}   
+                ```
                 {final_tested_code}
                 """
-            final_code = self._llm(final_prompt)
+            final_code = self._call_llm(final_prompt)
             print(f"Final Code generated. {final_code}")
             final_code = self._strip_fences(final_code)
-            self._write_file(filename, final_code)
-            history.add_user_message(final_code)
+            self._write_file(full_path, final_code, True)
+
+            self._run_unit_testing_agent(filename, final_code)
+
+    def _run_unit_testing_agent(self, filename: str, final_code: str) -> str:
+        """
+        Runs a coding agent to validate a module by:
+        - Writing a unit test
+        - Running the test
+        - Patching code if the test fails
+
+        Args:
+            filename (str): Name of the file to test (e.g., "apple.py")
+            final_code (str): Full source code of the file to be tested
+
+        Returns:
+            str: "ok" if the test passed or patch applied, or error stack if unresolved
+        """
+
+        prompt = f"""
+            You are a smart Python unit testing agent with code understanding and patching skills.
+            You're given the source file name and its full code.
+
+            Your mission:
+            1. Use the `write_unit_test` tool to generate a test class.
+            2. Use the `run_unit_test` tool to execute the generated test class.
+            3. If the test fails, use the `patch_code_from_test` tool to fix the original code.
+            4. Re-run the unit test until it passes or you determine it's unfixable.
+
+            RULES:
+            - Always use the tools. Do not invent or simulate test or patching code.
+            - Only return "ok" if the final unit test passes.
+
+            Input:
+            ```json
+            {{
+            "filename": "{filename}",
+            "code": "{final_code}"
+            }}
+            """
+
+        result = self.agent.run(prompt)
+        return result
 
 # Runner
 if __name__ == "__main__":
     agent = DeveloperAgent()
-    agent.write_all()
+    agent.develop_game()

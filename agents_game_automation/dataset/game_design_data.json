@@ -1,558 +1,146 @@
-[
-  {
-  "game_info": {
-    "name": "Mushroom Drop",
-    "version": "1.0.0",
-    "description": "Catch glowing mushrooms and dodge falling logs in a misty forest!"
-  },
-  "screen": {
-    "width": 480,
-    "height": 640,
-    "frame_rate": 60,
-    "scroll_speed": 4
-  },
-  "scene": {
-    "id": "misty_forest",
-    "description": "Foggy forest with deep greens and distant trees.",
-    "asset_path": "./assets/sprites/misty_forest.png"
-  },
-  "entities": [
-    {
-      "id": "player_spore",
-      "type": "character",
-      "sprite": "sporeling",
-      "health": 2,
-      "controls": {
-        "left": "K_a",
-        "right": "K_d"
-      },
-      "description": "Tiny forest critter named Spore.",
-      "asset_path": "./assets/sprites/sporeling.png"
-    }
-  ],
-  "spawners": [
-    {
-      "id": "glow_mushroom",
-      "entity": "mushroom",
-      "type": "collectible",
-      "sprite": "glow_mushroom",
-      "score": 2,
-      "description": "Glowing mushroom that adds score.",
-      "asset_path": "./assets/sprites/glow_mushroom.png",
-      "infinite": true,
-      "interval_sec": 2,
-      "fall_speed": 1.8,
-      "max_on_screen": 3
-    },
-    {
-      "id": "log_fall",
-      "entity": "log",
-      "type": "obstacle",
-      "sprite": "log",
-      "damage": 1,
-      "description": "Large log that drops from above.",
-      "asset_path": "./assets/sprites/log.png",
-      "infinite": true,
-      "interval_sec": 2.5,
-      "fall_speed": 2,
-      "max_on_screen": 2
-    }
-  ],
-  "levels": [
-    {
-      "id": "misty_intro",
-      "name": "Fog Hollow",
-      "use_spawners": ["glow_mushroom", "log_fall"]
-    }
-  ],
-  "gameplay": {
-    "type": "score",
-    "target": 10,
-    "description": "Collect mushrooms and avoid falling logs.",
-    "steps": [
-      "Move Spore with A/D.",
-      "Catch glowing mushrooms.",
-      "Avoid falling logs."
-    ],
-    "rules": [
-      "2 points per mushroom.",
-      "1 damage per log hit.",
-      "Lose at 0 health. Win at target score."
-    ],
-    "win_message": "The forest glows with your success!",
-    "lose_message": "You’ve been squashed by a log!"
-  },
-  "hud": {
-    "description": "Simple HUD with health and score.",
-    "score_display": {
-      "position": { "x": 10, "y": 10 },
-      "font_size": 20,
-      "color": "#AAFFAA",
-      "label": "Spores"
-    },
-    "health_display": {
-      "position": { "x": 390, "y": 10 },
-      "font_size": 20,
-      "color": "#FFAAAA",
-      "label": "Life"
-    }
-  }
-},
 {
   "game_info": {
     "name": "Apple Hop",
     "version": "1.1.0",
-    "description": "Bouncey and Ziggy catch apples and dodge hazards in a twilight forest!"
+    "description": "Start screen shows twilight forest with soft orange-violet gradient sky.",
+    "start_screen": {
+      "title_text": "Apple Hop",
+      "subtitle_text": "Press Enter to Play",
+      "font": { "family": "ArcadeClassic", "size": 48, "color": "#FFA500" },
+      "background": {
+        "assert_path": "./assets/sprites/start_background.png",
+        "description": "Twilight forest with soft orange-violet gradient sky."
+      },
+      "music": {
+        "assert_path": "./assets/sounds/start_theme.wav",
+        "description": "Gentle intro melody building anticipation."
+      }
+    }
   },
-  "screen": {
-    "width": 500,
-    "height": 600,
-    "frame_rate": 60,
-    "scroll_speed": 5
+  "screens": {
+    "game_screen": {
+      "screen": { "width": 500, "height": 600, "frame_rate": 60, "scroll_speed": 5 },
+      "background": {
+        "assert_path": "./assets/sprites/scene_background.png",
+        "description": "Pixel-art forest scene at sunset under a vibrant orange-purple sky."
+      },
+      "hud": {
+        "score": { "position": { "x": 10, "y": 10 }, "font_size": 24, "color": "#FFFFFF", "label": "Score" },
+        "health": { "position": { "x": 400, "y": 10 }, "font_size": 24, "color": "#FF0000", "label": "Health" }
+      },
+      "music": {
+        "assert_path": "./assets/sounds/background_music.wav",
+        "description": "Looping ambient forest track with soft wind and distant bird calls."
+      }
+    },
+    "win_screen": {
+      "message_text": "You Win!",
+      "font": { "family": "ArcadeClassic", "size": 56, "color": "#00FF00" },
+      "background": {
+        "assert_path": "./assets/sprites/win_background.png",
+        "description": "Bright clearing bathed in sunset glow."
+      },
+      "sound": {
+        "assert_path": "./assets/sounds/win.wav",
+        "description": "Short upbeat fanfare with bright horns and festive rhythm."
+      }
+    },
+    "lose_screen": {
+      "message_text": "Game Over",
+      "font": { "family": "ArcadeClassic", "size": 56, "color": "#FF0000" },
+      "background": {
+        "assert_path": "./assets/sprites/lose_background.png",
+        "description": "Dark forest under a purple-blue night sky."
+      },
+      "sound": {
+        "assert_path": "./assets/sounds/lose.wav",
+        "description": "Soft downward melody with gentle piano chords and fading echo."
+      }
+    }
   },
-  "scene": {
-    "id": "scene_background",
-    "description": "Sunset forest background with orange-violet sky gradient.",
-    "asset_path": "./assets/sprites/scene_background.png"
-  },
-  "entities": [
+  "objects": [
     {
       "id": "player_bouncey",
-      "type": "character",
-      "sprite": "bouncey",
+      "role": "player",
+      "description": "Cartoon creature mid-hop with dynamic pose and cheerful expression.",
+      "assert_path": "./assets/sprites/bouncey.png",
       "health": 3,
-      "controls": {
-        "left": "K_LEFT",
-        "right": "K_RIGHT"
-      },
-      "description": "Classic player character Bouncey.",
-      "asset_path": "./assets/sprites/bouncey.png"
-    }
-  ],
-  "spawners": [
+      "score": 0,
+      "controls": { "left": "K_LEFT", "right": "K_RIGHT" },
+      "spawn": {
+        "spawn_area": { "x_min": 0, "x_max": 500, "y_spawn": 0 }
+      }
+    },
     {
-      "id": "apple_spawner",
-      "entity": "apple",
-      "type": "collectible",
-      "sprite": "apple",
+      "id": "apple",
+      "role": "collectible",
+      "description": "A single big red apple.",
+      "assert_path": "./assets/sprites/apple.png",
       "score": 1,
-      "description": "Basic apple collectible.",
-      "asset_path": "./assets/sprites/apple.png",
-      "infinite": true,
-      "interval_sec": 1.5,
-      "fall_speed": 2,
-      "max_on_screen": 4
+      "spawn": {
+        "infinite": true,
+        "interval_sec": 1.5,
+        "fall_speed": 2,
+        "max_on_screen": 4,
+        "spawn_area": { "x_min": 0, "x_max": 500, "y_spawn": 0 }
+      }
     },
     {
-      "id": "golden_apple_spawner",
-      "entity": "golden_apple",
-      "type": "collectible",
-      "sprite": "golden_apple",
+      "id": "golden_apple",
+      "role": "collectible",
+      "description": "A single big glowing golden apple.",
+      "assert_path": "./assets/sprites/golden_apple.png",
       "score": 3,
-      "description": "Rare golden apple worth more points.",
-      "asset_path": "./assets/sprites/golden_apple.png",
-      "infinite": true,
-      "interval_sec": 5,
-      "fall_speed": 1.5,
-      "max_on_screen": 2
+      "spawn": {
+        "infinite": true,
+        "interval_sec": 5,
+        "fall_speed": 1.5,
+        "max_on_screen": 2,
+        "spawn_area": { "x_min": 0, "x_max": 500, "y_spawn": 0 }
+      }
     },
     {
-      "id": "stone_spawner",
-      "entity": "stone",
-      "type": "obstacle",
-      "sprite": "stone",
+      "id": "stone",
+      "role": "obstacle",
+      "description": "A big black stone with rough edges and visible cracks texture.",
+      "assert_path": "./assets/sprites/stone.png",
       "damage": 1,
-      "description": "Falling stone with rough edges.",
-      "asset_path": "./assets/sprites/stone.png",
-      "infinite": true,
-      "interval_sec": 1.2,
-      "fall_speed": 1,
-      "max_on_screen": 4
+      "spawn": {
+        "infinite": true,
+        "interval_sec": 1.2,
+        "fall_speed": 1,
+        "max_on_screen": 4,
+        "spawn_area": { "x_min": 0, "x_max": 500, "y_spawn": 0 }
+      }
     },
     {
-      "id": "bee_spawner",
-      "entity": "bee",
-      "type": "obstacle",
-      "sprite": "bee",
+      "id": "bee",
+      "role": "obstacle",
+      "description": "A big flying bee with translucent wings and a buzzing movement.",
+      "assert_path": "./assets/sprites/bee.png",
       "damage": 1,
-      "description": "Fast flying bee that stings if touched.",
-      "asset_path": "./assets/sprites/bee.png",
-      "infinite": true,
-      "interval_sec": 0.8,
-      "fall_speed": 3,
-      "max_on_screen": 5
+      "spawn": {
+        "infinite": true,
+        "interval_sec": 0.8,
+        "fall_speed": 3,
+        "max_on_screen": 5,
+        "spawn_area": { "x_min": 0, "x_max": 500, "y_spawn": 0 }
+      }
     }
   ],
   "levels": [
-    {
-      "id": "level_1",
-      "name": "Starter Grove",
-      "use_spawners": ["apple_spawner", "stone_spawner"]
-    },
-    {
-      "id": "level_2",
-      "name": "Golden Hunt",
-      "use_spawners": ["apple_spawner", "golden_apple_spawner", "stone_spawner"]
-    },
-    {
-      "id": "level_3",
-      "name": "Bee Trouble",
-      "use_spawners": ["apple_spawner", "bee_spawner", "stone_spawner"]
-    }
+    { "id": "level_1", "name": "Starter Grove", "objects": ["player_bouncey","apple","stone"] },
+    { "id": "level_2", "name": "Golden Hunt", "objects": ["player_bouncey","apple","golden_apple","stone"] },
+    { "id": "level_3", "name": "Bee Trouble", "objects": ["player_bouncey","apple","stone","bee"] }
   ],
   "gameplay": {
     "type": "score",
     "target": 20,
-    "description": "Collect apples and golden apples while dodging stones and bees.",
-    "steps": [
-      "Move your character using the assigned controls.",
-      "Catch falling apples or golden apples.",
-      "Avoid stones and bees to stay alive.",
-      "Reach the target score to win!"
-    ],
     "rules": [
-      "You gain 1 point for each apple and 3 points for each golden apple.",
-      "Touching a stone or bee costs 1 health.",
-      "Game ends when health is 0 or score reaches the target.",
-      "Stay within screen bounds."
-    ],
-    "win_message": "Awesome! You reached your score goal!",
-    "lose_message": "Oh no! Out of health!"
-  },
-  "hud": {
-    "description": "HUD showing health and score.",
-    "score_display": {
-      "position": { "x": 10, "y": 10 },
-      "font_size": 24,
-      "color": "#FFFFFF",
-      "label": "Score"
-    },
-    "health_display": {
-      "position": { "x": 400, "y": 10 },
-      "font_size": 24,
-      "color": "#FF0000",
-      "label": "Health"
-    }
-  },
-  "sounds": [
-    {
-      "id": "background_music",
-      "description": "Relaxing forest theme music.",
-      "asset_path": "./assets/sounds/background_music.wav"
-    },
-    {
-      "id": "apple_catch",
-      "description": "Sound when collecting a regular apple.",
-      "asset_path": "./assets/sounds/apple_catch.wav"
-    },
-    {
-      "id": "golden_apple_catch",
-      "description": "Shimmer sound for golden apple.",
-      "asset_path": "./assets/sounds/golden_apple.wav"
-    },
-    {
-      "id": "stone_hit",
-      "description": "Impact sound when hit by stone.",
-      "asset_path": "./assets/sounds/stone_hit.wav"
-    },
-    {
-      "id": "bee_sting",
-      "description": "Buzzing sting sound effect.",
-      "asset_path": "./assets/sounds/bee_sting.wav"
-    },
-    {
-      "id": "win",
-      "description": "Win sound for completing level.",
-      "asset_path": "./assets/sounds/win.wav"
-    },
-    {
-      "id": "lose",
-      "description": "Lose sound when out of health.",
-      "asset_path": "./assets/sounds/lose.wav"
-    }
-  ]
-},
-{
-  "game_info": {
-    "name": "Mushroom Drop",
-    "version": "1.0.0",
-    "description": "Catch glowing mushrooms and dodge falling logs in a misty forest!"
-  },
-  "screen": {
-    "width": 480,
-    "height": 640,
-    "frame_rate": 60,
-    "scroll_speed": 4
-  },
-  "scene": {
-    "id": "misty_forest",
-    "description": "Foggy forest with deep greens and distant trees.",
-    "asset_path": "./assets/sprites/misty_forest.png"
-  },
-  "entities": [
-    {
-      "id": "player_spore",
-      "type": "character",
-      "sprite": "sporeling",
-      "health": 3,
-      "controls": {
-        "left": "K_a",
-        "right": "K_d"
-      },
-      "description": "Tiny forest critter named Spore.",
-      "asset_path": "./assets/sprites/sporeling.png"
-    }
-  ],
-  "spawners": [
-    {
-      "id": "glow_mushroom_easy",
-      "entity": "mushroom",
-      "type": "collectible",
-      "sprite": "glow_mushroom",
-      "score": 2,
-      "asset_path": "./assets/sprites/glow_mushroom.png",
-      "description": "Mushroom worth 2 points.",
-      "infinite": true,
-      "interval_sec": 2.5,
-      "fall_speed": 1.5,
-      "max_on_screen": 3
-    },
-    {
-      "id": "glow_mushroom_fast",
-      "entity": "mushroom",
-      "type": "collectible",
-      "sprite": "glow_mushroom",
-      "score": 2,
-      "asset_path": "./assets/sprites/glow_mushroom.png",
-      "description": "Faster mushroom.",
-      "infinite": true,
-      "interval_sec": 1.5,
-      "fall_speed": 2,
-      "max_on_screen": 5
-    },
-    {
-      "id": "log_slow",
-      "entity": "log",
-      "type": "obstacle",
-      "sprite": "log",
-      "damage": 1,
-      "description": "Falling log hazard.",
-      "asset_path": "./assets/sprites/log.png",
-      "infinite": true,
-      "interval_sec": 3,
-      "fall_speed": 1.5,
-      "max_on_screen": 2
-    },
-    {
-      "id": "log_fast",
-      "entity": "log",
-      "type": "obstacle",
-      "sprite": "log",
-      "damage": 1,
-      "description": "Fast falling log.",
-      "asset_path": "./assets/sprites/log.png",
-      "infinite": true,
-      "interval_sec": 2,
-      "fall_speed": 2.5,
-      "max_on_screen": 4
-    }
-  ],
-  "levels": [
-    {
-      "id": "forest_intro",
-      "name": "Forest Floor",
-      "use_spawners": ["glow_mushroom_easy"],
-      "score_target": 10
-    },
-    {
-      "id": "deep_woods",
-      "name": "Deep Woods",
-      "use_spawners": ["glow_mushroom_easy", "log_slow"],
-      "score_target": 15
-    },
-    {
-      "id": "stormy_night",
-      "name": "Stormy Night",
-      "use_spawners": ["glow_mushroom_fast", "log_fast"],
-      "score_target": 20
-    }
-  ],
-  "gameplay": {
-    "type": "score",
-    "description": "Collect mushrooms and avoid logs.",
-    "steps": [
-      "Move left/right.",
-      "Collect mushrooms.",
-      "Dodge logs.",
-      "Reach target score to complete level."
-    ],
-    "rules": [
-      "Each mushroom = 2 points.",
-      "Log hit = lose 1 health.",
-      "Lose if health reaches 0."
-    ],
-    "win_message": "You conquered the forest!",
-    "lose_message": "You’ve been squashed by logs!"
-  },
-  "hud": {
-    "description": "Simple HUD with health and score.",
-    "score_display": {
-      "position": { "x": 10, "y": 10 },
-      "font_size": 20,
-      "color": "#AAFFAA",
-      "label": "Spores"
-    },
-    "health_display": {
-      "position": { "x": 390, "y": 10 },
-      "font_size": 20,
-      "color": "#FFAAAA",
-      "label": "Life"
-    }
-  }
-},
-{
-  "game_info": {
-    "name": "Pixel Plunge",
-    "version": "1.0.0",
-    "description": "Guide Pixel Pete through a collapsing cavern collecting gems and avoiding hazards."
-  },
-  "screen": {
-    "width": 480,
-    "height": 640,
-    "frame_rate": 60,
-    "scroll_speed": 4
-  },
-  "scene": {
-    "id": "cavern_depths",
-    "description": "Dark pixel cave with glowing gem veins.",
-    "asset_path": "./assets/sprites/cavern_background.png"
-  },
-  "entities": [
-    {
-      "id": "pixel_pete",
-      "type": "character",
-      "sprite": "pete",
-      "health": 3,
-      "controls": {
-        "left": "K_a",
-        "right": "K_d"
-      },
-      "description": "Pixel Pete explores dangerous caves for treasure.",
-      "asset_path": "./assets/sprites/pete.png"
-    }
-  ],
-  "spawners": [
-    {
-      "id": "blue_gem_spawner",
-      "entity": "blue_gem",
-      "type": "collectible",
-      "sprite": "blue_gem",
-      "score": 1,
-      "description": "Basic gem that sparkles softly.",
-      "asset_path": "./assets/sprites/blue_gem.png",
-      "infinite": true,
-      "interval_sec": 1.4,
-      "fall_speed": 2,
-      "max_on_screen": 4
-    },
-    {
-      "id": "red_gem_spawner",
-      "entity": "red_gem",
-      "type": "collectible",
-      "sprite": "red_gem",
-      "score": 3,
-      "description": "Rare ruby gem, glows red.",
-      "asset_path": "./assets/sprites/red_gem.png",
-      "infinite": true,
-      "interval_sec": 4,
-      "fall_speed": 1.2,
-      "max_on_screen": 2
-    },
-    {
-      "id": "rock_spawner",
-      "entity": "rock",
-      "type": "obstacle",
-      "sprite": "rock",
-      "damage": 1,
-      "description": "Chunky rock that falls from the ceiling.",
-      "asset_path": "./assets/sprites/rock.png",
-      "infinite": true,
-      "interval_sec": 1,
-      "fall_speed": 2.5,
-      "max_on_screen": 3
-    }
-  ],
-  "levels": [
-    {
-      "id": "level_1",
-      "name": "Shimmering Entry",
-      "use_spawners": ["blue_gem_spawner", "rock_spawner"]
-    },
-    {
-      "id": "level_2",
-      "name": "Red Hunt",
-      "use_spawners": ["blue_gem_spawner", "red_gem_spawner", "rock_spawner"]
-    }
-  ],
-  "gameplay": {
-    "type": "score",
-    "target": 15,
-    "description": "Collect gems while avoiding falling rocks.",
-    "steps": [
-      "Move left and right to catch gems.",
-      "Dodge falling rocks.",
-      "Reach the score goal to win."
-    ],
-    "rules": [
-      "Blue gems give 1 point.",
-      "Red gems give 3 points.",
-      "Rocks reduce health by 1.",
-      "Game ends on win or zero health."
-    ],
-    "win_message": "Nice work! You cleared the cavern!",
-    "lose_message": "Crushed! Try again."
-  },
-  "hud": {
-    "description": "Displays health and score at the top.",
-    "score_display": {
-      "position": { "x": 20, "y": 10 },
-      "font_size": 22,
-      "color": "#00FFFF",
-      "label": "Gems"
-    },
-    "health_display": {
-      "position": { "x": 400, "y": 10 },
-      "font_size": 22,
-      "color": "#FF5555",
-      "label": "Health"
-    }
-  },
-  "sounds": [
-    {
-      "id": "bg_music",
-      "description": "Cave ambience background loop.",
-      "asset_path": "./assets/sounds/cave_theme.mp3"
-    },
-    {
-      "id": "gem_collect",
-      "description": "Sound when a gem is collected.",
-      "asset_path": "./assets/sounds/gem_pickup.wav"
-    },
-    {
-      "id": "hit_rock",
-      "description": "Impact sound when hit by falling rock.",
-      "asset_path": "./assets/sounds/rock_hit.wav"
-    },
-    {
-      "id": "win",
-      "description": "Sound played when the player wins.",
-      "asset_path": "./assets/sounds/win_chime.mp3"
-    },
-    {
-      "id": "lose",
-      "description": "Sound played when the player loses.",
-      "asset_path": "./assets/sounds/fail_boom.mp3"
-    }
+      { "on": "apple", "effect": "+1 point", "assert_path": "./assets/sounds/apple_catch.wav", "description": "Quick bright chime on apple catch with crisp, uplifting tone." },
+      { "on": "golden_apple", "effect": "+3 points", "assert_path": "./assets/sounds/golden_apple.wav", "description": "Sparkle sound for gold apple with shimmering high notes softly." },
+      { "on": "stone", "effect": "-1 health", "assert_path": "./assets/sounds/stone_hit.wav", "description": "Deep thud on stone impact with low-frequency rumble effect realistic." },
+      { "on": "bee", "effect": "-1 health", "assert_path": "./assets/sounds/bee_sting.wav", "description": "Sharp buzz sting effect with quick fade-out and subtle ending." }
     ]
   }
-]
+}

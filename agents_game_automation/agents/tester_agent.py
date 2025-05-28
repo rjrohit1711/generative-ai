@@ -3,9 +3,10 @@
 import subprocess
 import py_compile
 import os
+from dotenv import load_dotenv
+
 from openai import OpenAI
 from langchain_community.chat_models import ChatOpenAI
-from dotenv import load_dotenv
 from langchain.agents import Tool
 from langchain.agents import initialize_agent, AgentType
 from langchain.memory import ConversationBufferMemory
@@ -60,7 +61,7 @@ class TesterAgent:
         self.agent = initialize_agent(
             llm=client,
             tools=tools,
-            agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+            agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
             memory=memory,
             handle_parsing_errors=True,
             max_iterations=50, 
@@ -225,16 +226,11 @@ if __name__ == "__main__":
 
     tester_agent = TesterAgent()
     dir = "bin/source/gamev3/"
-    file = "Game.py"
+    file = "main.py"
     path = os.path.join(dir, file)
     with open(path, "r", encoding="utf-8") as f:
             code = f.read()
     
-    summary_path = os.path.join(dir, "Summary/summary.txt")
-    with open(summary_path, "r", encoding="utf-8") as f:
-            summary = f.read()
-    json_path = "bin/source/game_configv3.json"
-    with open(json_path, "r", encoding="utf-8") as f:
-            json = f.read()
+    summary_path = os.path.join(dir, "data/tasks.txt")
     
-    tester_agent.test_agent(path, summary, json)
+    tester_agent.test_agent(path, summary_path)
