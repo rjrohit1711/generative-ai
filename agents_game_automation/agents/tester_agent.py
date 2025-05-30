@@ -42,9 +42,9 @@ class TesterAgent:
             func=lambda args: self._patch_code_tool(args),
             description=(
                 "Apply an AI-generated patch to a file based on an error. "
-                "Input format: 'relative/path/to/file.py||<error message>||<AI Thought>'."
+                "Input format: 'relative/path/to/file.py||<entire stack trace>||<AI Thought>'."
                 "Or if there is a human feedback."
-                "Input format: 'relative/path/to/file.py||<error message>||<Human feedback>'."
+                "Input format: 'relative/path/to/file.py||<entire stack trace>||<Human feedback>'."
             )
         )
 

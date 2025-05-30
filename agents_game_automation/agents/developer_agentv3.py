@@ -1,6 +1,8 @@
 # agents/developer_agent.py
 
 import re
+from inputimeout import inputimeout, TimeoutOccurred
+import textwrap, subprocess
 import os, sys, shutil
 from dotenv import load_dotenv
 import json
@@ -31,12 +33,14 @@ class DeveloperAgent:
         self.agent = self._agent()
         self.config_path = os.path.join(Constants.CONFIG_BASE, Constants.GAME_CONFIGV3)
         self.output_dir = "bin/source/gamev3"
+        self.test_dir = os.path.join(self.output_dir, "tests")
         self.data_dir = os.path.join(self.output_dir, "data")
         self.tasks_data = os.path.join(self.data_dir, "tasks.txt")
         if os.path.exists(self.output_dir):
             shutil.rmtree(self.output_dir)
         os.makedirs(self.output_dir, exist_ok=True)
         os.makedirs(self.data_dir, exist_ok=True)
+        os.makedirs(self.test_dir, exist_ok=True)
 
     def develop_game(self):
         """
@@ -75,8 +79,8 @@ class DeveloperAgent:
             func=lambda filename: self._write_unit_test(filename),
             description=(
                 "Generates a unit test class for a given class file. "
-                "Input format: 'class_name' "
-                "(e.g. 'Apple.py')"
+                "Input format: 'filename' "
+                "(e.g. 'apple.py')"
             )
         )
 
@@ -85,8 +89,8 @@ class DeveloperAgent:
             func=lambda filename: self._run_unit_test(filename),
             description=(
                 "Runs the unit test file for the given class and returns the result. "
-                "Input format: 'test_class_name' "
-                "(e.g. 'Test_Apple.py')"
+                "Input format: 'test_filename' "
+                "(e.g. 'Test_apple.py')"
             )
         )
 
@@ -95,13 +99,20 @@ class DeveloperAgent:
             func=lambda args: self._patch_code_from_test(args),
             description=(
                 "Patches the class implementation based on the unit test failure output. "
-                "Input format: 'class_name||test_output' "
-                "(e.g. 'Apple.py||<error_trace_or_output>')"
+                "Input format: 'filename||entire stack trace' "
+                "(e.g. 'apple.py||<entire stack trace>')"
             )
         )
 
+        human_feedback_tool = Tool(
+            name="human_feedback",
+            func=lambda filePath: self.human_feedback(filePath),
+            description=(
+                "Get Feeback from human via console and path and test again based on feedback provided."
+            )
+        )
 
-        tools = [write_unit_test_tool, run_unit_test_tool, patch_code_from_test_tool]
+        tools = [write_unit_test_tool, run_unit_test_tool, patch_code_from_test_tool, human_feedback_tool]
 
         return initialize_agent(
             llm=self.client,
@@ -117,33 +128,6 @@ class DeveloperAgent:
         response = self.client.invoke(prompt)
         return response.content.strip()
     
-    def _write_unit_test(self, class_filename: str) -> str:
-        """
-        Generates a unit test file named `Test_ClassName.py` for the specified class file.
-        Assumes the class name matches the filename (e.g., Apple.py -> class Apple).
-        """
-        # ... logic here ...
-        print(f"[✅] Unit test for '{class_filename}' generated successfully.")
-        return f"Test_{class_filename.replace('.py', '')}.py"
-    
-    def _run_unit_test(self, class_filename: str) -> dict:
-        """
-        Runs the corresponding unit test file `Test_ClassName.py` and returns the output,
-        including stdout, stderr, and return code.
-        """
-        # ... logic here ...
-        print(f"[✅] Unit test for '{class_filename}' executed successfully.")
-        return {"status": "Error", "stdout": "", "stderr": "Error Raised Exception", "returncode": -1}
-
-    def _patch_code_from_test(self, args) -> str:
-        """
-        Analyzes test output to identify missing methods or basic issues and patches the original class file
-        by inserting method stubs or minimal fixes.
-        """
-        # ... logic here ...
-        print(f"[✅] Code in '{args}' patched based on test results.")
-        return "Patch applied successfully."
-    
     def _get_tasks(self):
         # Define tasks: (filename, high-level instruction, needed config keys)
         planner_prompt = f"""
@@ -156,18 +140,9 @@ class DeveloperAgent:
             - Each key in the manifest represents a config module that must map to one or more Python files.
             - Make sure no such files are present which has no config module.
             - If a value is an object (e.g. "screens", "objects"), generate one module per subkey (e.g. win_screen, apple).
-            - Each file must have a detailed responsibility summary including its core logic, key functions, classes, and APIs it exposes.
-            - Describe how this module will interact with others (inputs/outputs/shared data).
-            - Make sure tasks are in topological sorted order and there should be no cyclic dependencies.
+            - **Important** Make sure tasks are in topological sorted order and there should be no cyclic dependencies.
+            - Make sure to wirte individual module first and keep it follow single responsibility principle as much possible.
             - Create a central 'main.py' class that integrates and manages all modules in the correct order.
-            
-            - Here are few examples as a reference:
-            
-            game_info.py | Defines `GameInfo` class that loads and provides access to global configuration such as screen dimensions, frame rate, and asset paths. Public API: `GameInfo.load()`, `GameInfo.get(key)`, `GameInfo.screen_width`, `GameInfo.screen_height`. Used by all other modules to retrieve game-wide settings. | game_info.json | None
-            player.py | Defines `Player` class that handles movement, animation, collision detection, scoring logic, and interaction with collectibles and obstacles. Public API: `Player.update()`, `Player.draw(screen)`, `Player.check_collision(obj)`, `Player.reset()`. Depends on `GameInfo` for screen bounds and on `mechanics` for rules like gravity and scoring. | player.json | game_info, mechanics
-            apple.py | Defines `Apple` class representing the collectible item. Handles spawning, falling motion, collision with player, and respawn. Public API: `Apple.update()`, `Apple.draw(screen)`, `Apple.check_collision(player)`, `Apple.reset_position()`. Uses config to determine spawn interval and fall speed. Interacts with `Player` to increment score on collect. | apple.json | game_info, mechanics
-            mechanics.py | Defines global mechanics like gravity, scoring rules, and spawn logic. Exposes `apply_gravity(obj)`, `calculate_score(type)`, and `spawn_entity(type)`. Provides reusable physics and scoring logic to `Player`, `Apple`, `Bee`, etc. | mechanics.json | game_info
-            main.py | Entry point of the game. Loads `GameInfo`, initializes all modules, controls game loop, handles transitions between screens (`start_screen`, `game_screen`, `win_screen`, `lose_screen`). Public API: `main()`, `handle_events()`, `switch_screen(name)`. | None | game_info, game_screen, win_screen, lose_screen, player, apple, golden_apple, bee, stone, mechanics, levels
             
             - OUTPUT FORMAT (STRICT!):
             - Enclose your entire plan in triple backticks (```).
@@ -182,7 +157,7 @@ class DeveloperAgent:
         tasks = self._reorder_tasks(tasks)
         
         for task in tasks:    
-            self._write_file(self.tasks_data, str(task))
+            self._write_file(self.tasks_data, str(task), False)
             print(task)
 
         if self._ask_yes_no("Do you want to continue?"):
@@ -298,7 +273,7 @@ class DeveloperAgent:
             else:
                 print("Please enter 'y' or 'n'.")
 
-    def _write_file(self, path: str, data: str, override: bool = False):
+    def _write_file(self, path: str, data: str, override: bool = True):
         mode = "w" if override else "a"
         with open(path, mode, encoding="utf-8") as f:
             f.write(f"{data}\n")
@@ -382,19 +357,17 @@ class DeveloperAgent:
                 ### TASK:
                 Generate a stub implementation for the file: **`{filename}`**
 
-                - **Purpose**: {instruction}
-                - **Relevant Config Data**:
+                - **description**: {instruction}
+                - **Relevant Data to build the game logic**:
                 {json.dumps(subconfig, indent=2)}
                 - **Depends On Classes**: {deps}
 
                 ### OUTPUT FORMAT (STRICTLY THIS):
                 - All necessary `import` statements for built-in modules and dependent classes.
-                - Module-level docstring explaining the purpose of this file.
+                - Module-level docstring explaining the description of this file.
                 - Class and/or function definitions only (no logic implemented).
                 - Use `# TODO:` comments in method/function bodies.
-                - Extract only the required config keys and declare them as class-level constants (e.g. `SCREEN_WIDTH = 800`)
-                - Do **not** copy nested JSON objects as-is.
-                - Use already defined classes where applicable.
+                - Copy the game data as class-level constants (e.g. `SCREEN_WIDTH = 800`) and use them to develop logic.
 
                 ### IMPORTANT:
                 - Be minimal but accurate: focus on structure, interface, and reusability.
@@ -411,16 +384,14 @@ class DeveloperAgent:
                 You are an expert Pygame developer.
 
                 File: `{filename}`  
-                Instruction: {instruction}  
-                Config: {json.dumps(subconfig, indent=2)}
+                Instruction: {instruction}
 
                 Stub:
                 ```python
                 {stub_code}
 
                 - Replace all # TODO blocks with working code.
-                - Use and import any required classes from the summary.
-                - Extract relevant config values as class-level constants.
+                - Use and import any required classes from the instruction.
                 - Remove all docstrings.
                 - Preserve the structure — do not rename anything.
                 - Output the complete Python file only, no extra text or formatting.
@@ -434,8 +405,6 @@ class DeveloperAgent:
                 Task: Fix all linting and syntax issues in `{filename}` using `flake8` standards.
 
                 Instructions:
-                - Remove unused variables and imports.
-                - From the dependent classes listed: {deps}, remove any not actually used.
                 - Do not change logic — only fix style and syntax.
                 - Remove all docstrings.
                 - Return the full corrected Python file only, with no extra commentary.
@@ -451,26 +420,7 @@ class DeveloperAgent:
             full_path = os.path.join(self.output_dir, filename)
             self._write_file(full_path, impl_code, True)
 
-            with open(full_path, 'r', encoding='utf-8') as f:
-                final_tested_code = f.read()
-            
-            # Remove any testing code. 
-            final_prompt = f"""
-                All tests now pass for `{filename}`.  
-                Please remove testing code from this and clean it. Without modifying any logic.
-                Add Config data as comment at the bottom of the page. Add comment above this saying do not remove this config.
-                Config = {subconfig}
-                Add Task description below this.
-                Description = {instruction}   
-                ```
-                {final_tested_code}
-                """
-            final_code = self._call_llm(final_prompt)
-            print(f"Final Code generated. {final_code}")
-            final_code = self._strip_fences(final_code)
-            self._write_file(full_path, final_code, True)
-
-            self._run_unit_testing_agent(filename, final_code)
+            self._run_unit_testing_agent(filename, impl_code)
 
     def _run_unit_testing_agent(self, filename: str, final_code: str) -> str:
         """
@@ -495,7 +445,9 @@ class DeveloperAgent:
             1. Use the `write_unit_test` tool to generate a test class.
             2. Use the `run_unit_test` tool to execute the generated test class.
             3. If the test fails, use the `patch_code_from_test` tool to fix the original code.
-            4. Re-run the unit test until it passes or you determine it's unfixable.
+            4. If the test class fails to compile, use the `patch_code_from_test` tool to fix the test class code.
+            5. If patch is unable to resolve the issue after several tries, use the `human_feedback_tool` to get feeedback from human.
+            6. Re-run the unit test until it passes or you determine it's unfixable.
 
             RULES:
             - Always use the tools. Do not invent or simulate test or patching code.
@@ -511,6 +463,181 @@ class DeveloperAgent:
 
         result = self.agent.run(prompt)
         return result
+    
+    def _write_unit_test(self, class_filename: str) -> str:
+        """
+        Generates a unit test file named `Test_ClassName.py` for the specified class file.
+        Assumes the class name matches the filename (e.g., Apple.py -> class Apple).
+        """
+        # ... logic here ...
+        file_content = self._read_file(os.path.join(self.output_dir, class_filename))
+        code, config, description = self.extract_parts(file_content)
+
+        prompt = textwrap.dedent(f"""
+            Write a unit test using **pytest**. The output must be valid Python code.
+                                 
+            ## Use relative import before importing file, this should be always be valid for all test files.
+            ```
+            import sys
+            import os
+            sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+            ```
+            then import filename, filename = {class_filename}
+            example:                                     
+            from game_info(filename) import GameInfo, SCREEN_WIDTH, SCREEN_HEIGHT ... and so on.
+
+            ### 🎯 Requirements:
+            - Import the class/module correctly.
+            - Use **pytest** best practices (e.g., fixtures, clear test function names).
+            - Test only the **public API** exposed in the description below.
+
+            ### 📦 Code: This is the implementation that should be tested using the config and description below.
+            ```python
+            {code}
+            🛠 Config data : This config data is used to write the code implemented above.
+            {config}
+            📚 Description: This describes the purpose of the module and the public API that must be tested.
+            {description}
+
+            ✅ Generate a pytest unit test file that fully tests the functionality and behavior described above using the provided config and class code.
+            """)
+        
+        raw_resposne = self._call_llm(prompt)
+        test_code = self._strip_fences(raw_resposne)
+        test_filename = f"Test_{class_filename.replace('.py', '')}.py"
+        self._write_file(os.path.join(self.test_dir, test_filename), test_code)
+
+        print(f"[✅] Unit test for '{class_filename}' generated successfully.")
+        return test_filename
+    
+    def extract_parts(self, file_content):
+        lines = file_content.splitlines()
+        code_lines = []
+        config_lines = []
+        description_lines = []
+        in_config = False
+        for line in lines:
+            # Detect start of config block
+            if re.match(r"^\s*Config\s*=[\s\S]*", line) or re.match(r"^# DO NOT REMOVE", line):
+                in_config = True
+            if in_config:
+                config_lines.append(line)
+            else:
+                code_lines.append(line)
+            # Detect description line
+            if line.strip().startswith("# Description"):  # capture description
+                # assume rest of line is description
+                desc = line.split("=", 1)[-1].strip()
+                description_lines.append(desc)
+        # Clean code: remove trailing empty lines
+        while code_lines and code_lines[-1].strip() == "":
+            code_lines.pop()
+        code = "\n".join(code_lines).strip()
+        config = "\n".join(config_lines).strip()
+        description = " ".join(description_lines).strip()
+        return code, config, description
+    
+    def _run_unit_test(self, filename: str) -> dict:
+        """
+        Runs the corresponding unit test file `Test_filename.py` and returns the output,
+        including stdout, stderr, and return code.
+        """
+        # ... logic here ...
+        test_path = os.path.join(self.test_dir, filename)
+
+        try:
+            result = subprocess.run(
+                ["pytest", "-s", "-v", test_path, "--tb=short"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+
+            output = {
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "returncode": result.returncode,
+            }
+
+            if result.returncode == 0:
+                output["status"] = "success"
+                output["traceback"] = None
+            else:
+                output["status"] = "error"
+                output["traceback"] = result.stderr
+
+            print(f"[✅] Unit test for '{filename}' executed successfully.")
+            return output
+
+        except FileNotFoundError:
+            return {
+                "status": "error",
+                "stdout": "",
+                "stderr": "pytest not found. Please ensure pytest is installed.",
+                "returncode": -1,
+                "traceback": "pytest executable not found in system PATH."
+            }
+
+    def _patch_code_from_test(self, args) -> str:
+        try:
+            # Split the input string
+            if "||" not in args:
+                return "Invalid input format. Expected 'filename||test_output'."
+
+            filename, test_output = args.split("||", 1)
+            if "Test" in filename:
+                filepath = os.path.join(self.test_dir, filename)
+            else:
+                filepath = os.path.join(self.output_dir, filename)
+
+            # Read original file content
+            code = self._read_file(filepath)
+
+            patch_prompt = f"""
+                You are an expert software engineer.
+
+                Your task is to patch the following Python source code based on test errors. 
+                You will receive:
+                1. The source code that failed.
+                2. The pytest output that shows the errors.
+
+                Analyze the test output and modify the code to:
+                - Add any missing method or property stubs.
+                - Make minimal changes to fix the issue.
+                - Do NOT remove existing functionality unless clearly broken.
+                - Use clear `# TODO` comments for incomplete method implementations.
+
+                Return the complete corrected code (as a single code block, no explanation).
+
+                --- FILE START ---
+                {code}
+                --- FILE END ---
+
+                --- TEST OUTPUT START ---
+                {test_output}
+                --- TEST OUTPUT END ---
+
+                Now return the updated code below:
+                ```python
+                """
+
+            raw_patch = self._call_llm(patch_prompt)
+            fix_code = self._strip_fences(raw_patch)
+            self._write_file(filepath, fix_code)
+
+            return f"[✅] Code in '{filename}' patched based on test results."
+
+        except Exception as e:
+            return f"[❌] Exception occurred while patching: {str(e)}"
+        
+    def human_feedback(self, filepath):
+        
+        try:
+            user_input = inputimeout(prompt=f'Enter Feedback for {filepath}: ', timeout=100)
+        except TimeoutOccurred:
+            user_input = 'Ok'
+        return user_input
+
 
 # Runner
 if __name__ == "__main__":
